@@ -1,27 +1,27 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using Service.Api;
-
-namespace Service
+﻿namespace Service
 {
+    using Service.Api;
+    using Service.Api.Module;
+    using Service.Transport;
+
+    using System;
+    using System.Net;
+    using System.Net.Sockets;
+
     class Program
     {
-        public static TcpClient client;
-        private static TcpListener listener;
-        private static string ipString;
-        private static FileManager _fileManager;
-
-        private static JsonManager _jsonManager;
-
+        /// <summary>
+        /// TODO: Добавить DI.
+        /// </summary>
         static void Main(string[] args)
         {
-            _fileManager = new FileManager();
-            
-            _jsonManager = new JsonManager(_fileManager);
+            var fileManager = new FileManager();
+            var jsonManager = new ApiController();
 
             IPAddress[] localIp = Dns.GetHostAddresses(Dns.GetHostName());
+
+            string ipString = string.Empty;
+
             foreach (IPAddress address in localIp)
             {
                 if (address.AddressFamily == AddressFamily.InterNetwork)
@@ -30,59 +30,27 @@ namespace Service
                     break;
                 }
             }
-            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipString), 1234);
-            listener = new TcpListener(ep);
-            listener.Start();
-            Console.WriteLine(@"  
-            ===================================================  
-                   Started listening requests at: {0}:{1}  
-            ===================================================",
-            ep.Address, ep.Port);
-            client = listener.AcceptTcpClient();
-            Console.WriteLine("Connected to client!" + " \n");
-            while (client.Connected)
-            {
-                try
-                {
-                    const int bytesize = 1024 * 1024;
-                    byte[] buffer = getData(client);
 
-                    string data = Encoding.UTF8.GetString(buffer);
+            // TODO: Вынести в настройки.
+            var port = 1234;
 
-                    _jsonManager.Execute(data, client);
-                }
-                catch (Exception exc)
-                {
-                    client.Dispose();
-                    client.Close();
-                }
-            }
-        }
+            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipString), port);
 
-        public static byte[] getData(TcpClient client)
-        {
-            NetworkStream stream = client.GetStream();
-            byte[] fileSizeBytes = new byte[4];
-            int bytes = stream.Read(fileSizeBytes, 0, fileSizeBytes.Length);
-            int dataLength = BitConverter.ToInt32(fileSizeBytes, 0);
+            var suncModule = new SyncModule(jsonManager, fileManager);
+            var infoModule = new InfoModule(jsonManager, fileManager);
 
-            int bytesLeft = dataLength;
-            byte[] data = new byte[dataLength];
+            var tcp = new TcpService(jsonManager, ep);
+            tcp.Start();
+            ep = new IPEndPoint(IPAddress.Parse(ipString), port + 1);
+            var ws = new WsService(jsonManager, ep);
+            ws.Start();
 
-            int buffersize = 1024;
-            int bytesRead = 0;
+            // TODO: Добавить CancellationToken
+            Console.ReadKey(true);
 
-            while (bytesLeft > 0)
-            {
-                int curDataSize = System.Math.Min(buffersize, bytesLeft);
-                if (client.Available < curDataSize)
-                    curDataSize = client.Available;//This save me
-
-                bytes = stream.Read(data, bytesRead, curDataSize);
-                bytesRead += curDataSize;
-                bytesLeft -= curDataSize;
-            }
-            return data;
+            tcp.Stop();
+            ws.Stop();
+            return;
         }
     }
 }

@@ -3,7 +3,6 @@
     using Newtonsoft.Json;
 
     using Service.Api.Interfaces;
-    using Service.Api.Message.Common;
     using Service.Attribute.Api;
 
     using System.Collections.Generic;
@@ -12,11 +11,11 @@
     public class SyncFilesRequest : IMessage
     {
         [JsonProperty(PropertyName = "files")]
-        public List<BaseFileInfo> Files { get; set; }
+        public List<string> Files { get; set; }
 
         public SyncFilesRequest()
         {
-            Files = new List<BaseFileInfo>();
+            Files = new List<string>();
         }
     }
 }

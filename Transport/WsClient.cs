@@ -1,20 +1,27 @@
-﻿namespace Service.Transport
+﻿using Service.Api.Interfaces;
+using Service.Api.Message;
+
+namespace Service.Transport
 {
-    using Newtonsoft.Json;
-
-    using NLog;
-
-    using Service.Api.Message;
-
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Text;
+    using System.Linq;
+    using System.Net;
+
+    using NLog;
+
+
+    using Newtonsoft.Json;
+
+
     using WebSocketSharp;
     using WebSocketSharp.Server;
 
-    public class WsClient : WebSocketBehavior, IClient
+    using Logger = NLog.Logger;
+
+
+    internal class WsClient : WebSocketBehavior, IClient
     {
         #region Fields
 
@@ -24,99 +31,139 @@
         private readonly Queue<MessageContainer> _mainMessageQueue;
         private readonly Queue<MessageContainer> _additionalMessageQueue;
 
-        private readonly ILogger _logger;
+        private bool _queueLockMode;
+        private Logger _logger;
 
-        public readonly ConcurrentDictionary<ushort, bool> _listenPorts;
+        private readonly ConcurrentDictionary<ushort, bool> _listenPorts;
+
 
         #endregion Fields
 
-        public bool IsConnected { get; set; }
-
         #region Constructors
 
+       
         public WsClient(WsService service)
         {
             _service = service;
-            _logger = LogManager.GetCurrentClassLogger();
+
             _lockObject = new object();
             _mainMessageQueue = new Queue<MessageContainer>();
             _additionalMessageQueue = new Queue<MessageContainer>();
             _listenPorts = new ConcurrentDictionary<ushort, bool>();
+            _queueLockMode = false;
         }
 
         #endregion Constructors
 
         #region Methods
 
-        public void Initialize()
+
+        public void InitializeRawData(IList<ushort> listenPorts)
         {
-            _service.Authorize(this);
+            _listenPorts.Clear();
+            foreach (var port in listenPorts)
+                _listenPorts[port] = true;
         }
 
-
-        internal void Send(FileInfo fileInfo)
+        public bool IsConfiguredPort(ushort port)
         {
-            Send(fileInfo);
+            return _listenPorts.ContainsKey(port);
         }
 
-        public void SendMessage(MessageContainer messageContainer)
+        
+        public void TimeTick()
+        {
+            SendQueue();
+        }
+
+        public void LockQueue()
+        {
+            lock (_lockObject)
+            {
+                _queueLockMode = true;
+            }
+        }
+
+        public void UnlockQueue()
+        {
+            lock (_lockObject)
+            {
+                _queueLockMode = false;
+                while (_additionalMessageQueue.Count > 0)
+                {
+                    var messageContainer = _additionalMessageQueue.Dequeue();
+                    _mainMessageQueue.Enqueue(messageContainer);
+                }
+            }
+
+            SendQueue();
+        }
+
+        private void SendMessage(IMessage message, bool broadcast)
         {
             try
             {
+                MessageContainer messageContainer = _service.Controller.SerializePacket(message);
 
                 lock (_lockObject)
                 {
-                    var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-                    string serializedMessages = JsonConvert.SerializeObject(messageContainer, settings);
-
-                    Send(serializedMessages);
-
-                    //if (!_queueLockMode)
-                    //    _mainMessageQueue.Enqueue(messageContainer);
-                    //else
-                    //    _additionalMessageQueue.Enqueue(messageContainer);
+                    if (!_queueLockMode)
+                    {
+                        _mainMessageQueue.Enqueue(messageContainer);
+                    }
+                    else
+                    {
+                        _additionalMessageQueue.Enqueue(messageContainer);
+                    }
                 }
 
-                //SendQueue();
+                SendQueue();
             }
             catch (Exception ex)
             {
+                if (!broadcast)
+                    throw;
                 _logger.Warn(ex);
-                IsConnected = false;
             }
         }
 
+
         protected override void OnOpen()
         {
+            _logger = LogManager.GetCurrentClassLogger();
             _logger.Debug(() => $"opened connection: {ID}");
-            IsConnected = true;
+
             _service.Authorize(this);
+            IsConnected = true;
         }
 
         protected override void OnClose(CloseEventArgs e)
         {
             _logger.Debug(() => $"closed connection: {ID}");
+
             _service.Remove(this);
             IsConnected = false;
         }
 
-        protected override void OnMessage(MessageEventArgs e)
+        protected override void OnMessage(WebSocketSharp.MessageEventArgs e)
         {
-            if (!e.IsText)
-                return;
-            
-            try
+            if (e.IsText)
             {
-                if (e.Data == "test")
+                _logger?.Trace(() => $"message received: {e.Data}");
+
+                try
                 {
-                    _service.ApiController.Execute("[{\"Type\":\"SyncFilesRequest\",\"Value\":{\"files\":[]}}]", this);
-                    return;
+                    var messages = JsonConvert.DeserializeObject<MessageContainer[]>(e.Data);
+                    foreach (var message in messages)
+                    {
+                        _service.Controller.HandleMessage(this, message);
+                    }
+
                 }
-                _service.ApiController.Execute(e.Data, this);
-            }
-            catch (Exception ex)
-            {
-                _logger.Warn(ex);
+                catch (Exception ex)
+                {
+                    _logger?.Warn(ex);
+                }
             }
         }
 
@@ -126,49 +173,44 @@
 
             lock (_lockObject)
             {
-                if (_mainMessageQueue.Count == 0)
+                if (_mainMessageQueue.Count == 0 || _queueLockMode)
                     return;
 
                 messages = _mainMessageQueue.ToArray();
                 _mainMessageQueue.Clear();
-
             }
 
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             string serializedMessages = JsonConvert.SerializeObject(messages, settings);
-
             Send(serializedMessages);
-            //SendData(serializedMessages);
-        }
-
-        private void SendData(string rawString)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(rawString);
-            byte[] dataLength = BitConverter.GetBytes(data.Length);
-
-            var datas = new byte[4];
-            Buffer.BlockCopy(dataLength, 0, datas, 0, 4);
-
-            Send(datas);
-
-            int bytesSent = 0;
-            int bytesLeft = data.Length;
-
-            while (bytesLeft > 0)
-            {
-                int curDataSize = Math.Min(1024, bytesLeft);
-                datas = new byte[curDataSize];
-                Buffer.BlockCopy(data, bytesSent, datas, 0, curDataSize);
-                Send(datas);
-
-                bytesSent += curDataSize;
-                bytesLeft -= curDataSize;
-            }
+            _logger?.Trace(() => $"message sent: {serializedMessages}");
         }
 
         public void Close()
         {
             Context.WebSocket.Close();
+        }
+
+        // public void SendPromiseStatus(int promiseId, long eventId, PromiseStates state, IMessage message)
+        // {
+        //     var response = new PromiseResponse
+        //     {
+        //         PromiseId = promiseId,
+        //         EventId = (ulong)eventId,
+        //         State = _promiseStateMapper.Transform(state),
+        //         // так как message может прилетать пустым, то нужно обрабатывать этот случай
+        //         Identifier = message != null ? _service.Controller.SerializePacket(message).Identifier : string.Empty,
+        //         Payload = message
+        //     };
+        //
+        //     SendMessage(response, true);
+        // }
+
+        public bool IsConnected { get; set; }
+
+        public void SendMessage(IMessage message)
+        {
+            SendMessage(message, false);
         }
 
         #endregion Methods

@@ -1,28 +1,14 @@
 ﻿namespace Service
 {
-    using Service.Api.Message.Common;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
 
-    /// <summary>
-    /// TODO: Добавить модуль для управления настройками
-    /// </summary>
     public class FileManager
     {
-        public const string ROOT_PATH = "E:\\Downloads";
-
-        /// <summary>
-        /// Загзурить файлы из папки и подпапок.
-        /// </summary>
-        public List<BaseFileInfo> GetFileList()
+        public List<string> GetFileList(string folderPath)
         {
-            return GetFileList(ROOT_PATH);
-        }
-
-        private List<BaseFileInfo> GetFileList(string folderPath)
-        {
-            var baseFileInfos = new List<BaseFileInfo>();
+            var baseFileInfos = new List<string>();
             if (string.IsNullOrEmpty(folderPath))
                 return baseFileInfos;
 
@@ -32,11 +18,7 @@
             foreach (string file in files)
             {
                 FileInfo fileInfo = new FileInfo(file);
-                string[] directory = fileInfo.Directory?.FullName.Replace(ROOT_PATH, string.Empty).Split(Path.DirectorySeparatorChar);
-                var baseFileInfo = new BaseFileInfo();
-                baseFileInfo.FileName = fileInfo.Name;
-                baseFileInfo.FilePath.AddRange(directory);
-                baseFileInfos.Add(baseFileInfo);
+                baseFileInfos.Add(fileInfo.FullName);
             }
 
             foreach (var folder in folders)
@@ -47,16 +29,13 @@
         }
 
         public void CompairFolders(
-            ICollection<BaseFileInfo> observableCollection,
-            List<BaseFileInfo> sourceFiles,
-            List<BaseFileInfo> targetFiles)
+            ICollection<string> observableCollection,
+            List<string> sourceFiles,
+            List<string> targetFiles)
         {
-            bool IsTrue(BaseFileInfo sourceFile, BaseFileInfo x)
+            bool IsTrue(string sourceFile, string x)
             {
-                if (!sourceFile.FileName.Equals(x.FileName))
-                    return false;
-
-                if (!string.Join(string.Empty, sourceFile.FilePath).Equals(string.Join(string.Empty, x.FilePath)))
+                if (!sourceFile.Equals(x))
                     return false;
 
                 return true;
@@ -70,20 +49,13 @@
         }
 
 
-        public string GetRealPath(BaseFileInfo baseFileInfo)
+        public void RemoveFiles(IList<string> toRemoveList)
         {
-            var path = Path.Combine(baseFileInfo.FilePath.ToArray());
-            var filePath = Path.Combine(path, baseFileInfo.FileName);
-            var realPath = Path.Combine(ROOT_PATH, filePath);
-            return realPath;
-        }
-
-        public List<string> RemoveRootPath(FileInfo fileInfo)
-        {
-            List<string> directory = fileInfo.Directory.FullName.Split(Path.DirectorySeparatorChar).ToList();
-            var path1 = ROOT_PATH.Split(Path.DirectorySeparatorChar).ToList();
-            path1.ForEach(x => directory.Remove(x));
-            return directory;
+            foreach (var filePath in toRemoveList)
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
         }
     }
 }

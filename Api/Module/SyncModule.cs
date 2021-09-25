@@ -1,9 +1,11 @@
-﻿namespace Service.Api.Module
+﻿using Service.Api.Interfaces;
+using Service.Api.Module.Common;
+
+namespace Service.Api.Module
 {
     using NLog;
 
     using Service.Api.Message;
-    using Service.Api.Message.Common;
     using Service.Api.Message.Sync;
     using Service.Transport;
 
@@ -12,84 +14,109 @@
     using System.IO;
     using System.Linq;
 
-    public class SyncModule
+    public class SyncModule : BaseApiModule
     {
         private readonly FileManager _fileManager;
-        private readonly ApiController _apiController;
+        private readonly SettingsManager _settingsManager;
+        private readonly ConnectionStateManager _connectionStateManager;
         private readonly ILogger _logger;
 
-        public SyncModule(ApiController apiController, FileManager fileManager)
+        public SyncModule(FileManager fileManager,
+            SettingsManager settingsManager,
+            ConnectionStateManager connectionStateManager) : base("sync", new Version(0,1))
         {
             _logger = LogManager.GetCurrentClassLogger();
             _fileManager = fileManager;
-            _apiController = apiController;
-
-            _apiController.Configure<SyncFilesRequest>(OnSyncFilesRequest);
+            _settingsManager = settingsManager;
+            _connectionStateManager = connectionStateManager;
         }
 
-        private void OnSyncFilesRequest(SyncFilesRequest fileAction, IClient client)
+        protected override void OnInitialize()
         {
-            var root_files = _fileManager.GetFileList();
-            var not_exist_in_server = new List<BaseFileInfo>();
-            var not_exist_in_client = new List<BaseFileInfo>();
-            _fileManager.CompairFolders(not_exist_in_server, fileAction.Files, root_files);
-            _fileManager.CompairFolders(not_exist_in_client, root_files, fileAction.Files);
-
-            SendFilesAddResponce(not_exist_in_client, client);
-            SendFilesRemoveResponce(not_exist_in_server, client);
+            RegisterMessage<SyncFilesRequest>(OnSyncFilesRequest);
         }
 
-        private void SendFilesAddResponce(List<BaseFileInfo> not_exist_in_client, IClient client)
+
+        private void OnSyncFilesRequest(IClient client, SyncFilesRequest fileAction)
         {
-            foreach (BaseFileInfo baseFileInfo in not_exist_in_client)
+            var login = _connectionStateManager.GetLoginByToken(client.ID);
+     
+            var syncFiles = _settingsManager.GetFilesForClient(login);
+            
+            
+            var toRemoveInServer = new List<string>();
+            _fileManager.CompairFolders(toRemoveInServer, syncFiles, fileAction.Files);
+            _settingsManager.RemoveSyncState(login, toRemoveInServer);
+            
+
+            var toDownloadInServer = new List<string>();
+            _fileManager.CompairFolders(toDownloadInServer, fileAction.Files, syncFiles);
+           
+            
+            var folders = _settingsManager.GetFoldersForClient(login);
+            
+            var notExistInServer = new List<string>();
+            var notExistInClient = new List<string>();
+            
+            foreach (var folder in folders)
+            {
+                var rootFiles = _fileManager.GetFileList(folder);
+               
+                _fileManager.CompairFolders(notExistInServer, fileAction.Files, rootFiles);
+                _fileManager.CompairFolders(notExistInClient, rootFiles, fileAction.Files);
+            }
+            
+            var needToAdd = notExistInClient.Where(x => !syncFiles.Contains(x)).ToList();
+            var needToRemove = notExistInServer.Where(x => syncFiles.Contains(x)).ToList();
+            
+            _fileManager.RemoveFiles(toRemoveInServer);
+            SendUploadRequest(toDownloadInServer, client);
+            SendFilesAddResponce(needToAdd, client);
+            SendFilesRemoveResponce(needToRemove, client);
+            _settingsManager.RemoveSyncState(login, needToRemove);
+        }
+
+        private void SendUploadRequest(List<string> notExistInServer, IClient client)
+        {
+            foreach (string baseFileInfo in notExistInServer)
             {
                 if (!client.IsConnected)
                     return;
 
-                int default_size = 1024;
-
-                var realPath = _fileManager.GetRealPath(baseFileInfo);
-
-                FileInfo fileInfo = new FileInfo(realPath);
-
-                var fileAddResponce = new FileAddResponce();
-                fileAddResponce.FileName = fileInfo.Name;
-                fileAddResponce.FilePath.AddRange(_fileManager.RemoveRootPath(fileInfo));
-                fileAddResponce.Count = (long)Math.Ceiling((double)fileInfo.Length / default_size);
-
-                using (Stream source = File.OpenRead(realPath))
-                {
-                    int position;
-
-                    byte[] buffer = new byte[default_size];
-
-                    while ((position = source.Read(buffer, 0, buffer.Length)) > 0 && client.IsConnected)
-                    {
-                        var size = fileInfo.Length - (fileInfo.Length - position);
-                        if (size < default_size)
-                            default_size = (int)size;
-
-                        var tmp = buffer.Take(default_size);
-                        string base64EncodedExternalAccount = Convert.ToBase64String(tmp.ToArray());
-                        fileAddResponce.Stream = base64EncodedExternalAccount;
-                        fileAddResponce.Current++;
-                        _apiController.Send(client, fileAddResponce);
-                    }
-                }
+                var fileUploadRequest = new FileUploadRequest();
+                fileUploadRequest.FileName = baseFileInfo;
+                client.SendMessage(fileUploadRequest);
             }
         }
 
-        private void SendFilesRemoveResponce(List<BaseFileInfo> not_exist_in_server, IClient client)
+        private void SendFilesAddResponce(List<string> not_exist_in_client, IClient client)
         {
-            foreach (BaseFileInfo baseFileInfo in not_exist_in_server)
+            foreach (string baseFileInfo in not_exist_in_client)
+            {
+                if (!client.IsConnected)
+                    return;
+
+                FileInfo fileInfo = new FileInfo(baseFileInfo);
+
+                var fileAddResponce = new FileAddResponce();
+                fileAddResponce.FileName = fileInfo.FullName;
+                fileAddResponce.Size = fileInfo.Length;
+
+                client.SendMessage(fileAddResponce);
+            }
+        }
+
+        private void SendFilesRemoveResponce(List<string> not_exist_in_server, IClient client)
+        {
+            foreach (string baseFileInfo in not_exist_in_server)
             {
                 if (!client.IsConnected)
                     return;
 
                 var fileRemoveResponce = new FileRemoveResponce();
-                fileRemoveResponce.FileName = baseFileInfo.FileName;
-                fileRemoveResponce.FilePath.AddRange(baseFileInfo.FilePath);
-                _apiController.Send(client, fileRemoveResponce); 
+                fileRemoveResponce.FileName = baseFileInfo;
+                client.SendMessage(fileRemoveResponce); 
+               
             }
         }
     }

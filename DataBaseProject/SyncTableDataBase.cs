@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using DataBaseProject.Dto;
 
 namespace DataBaseProject
@@ -30,30 +31,38 @@ namespace DataBaseProject
 
         public void AddState(string login, string filePath)
         {
-            using (var dataBase = _dataBaseFactory.Create())
+            Task.Run(() =>
             {
-                dataBase.SyncStates.Add(new SyncState()
+                using (var dataBase = _dataBaseFactory.Create())
                 {
-                    Login = login,
-                    FilePath = filePath
-                });
-
-                dataBase.ApplyChanges();
-            }
+                    var state = new SyncState()
+                    {
+                        Login = login,
+                        FilePath = filePath
+                    };
+                    
+                    dataBase.SyncStates.Add(state);
+                    dataBase.ApplyChanges();
+                }
+            });
         }
 
         public void RemoveSyncStates(string login, IList<string> paths)
         {
-            using (var dataBase = _dataBaseFactory.Create())
+            Task.Run(() =>
             {
-                var syncState = from b in dataBase.SyncStates
-                    where b.Login == login && paths.Contains(b.FilePath)
-                    select b;
-              
+                using (var dataBase = _dataBaseFactory.Create())
+                {
+                    var syncState = from b in dataBase.SyncStates
+                        where b.Login == login && paths.Contains(b.FilePath)
+                        select b;
 
-                dataBase.SyncStates.RemoveRange(syncState);
-                dataBase.ApplyChanges();
-            }
+
+                    dataBase.SyncStates.RemoveRange(syncState);
+                    dataBase.ApplyChanges();
+                }
+            });
+
         }
     }
 }

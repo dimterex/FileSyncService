@@ -21,8 +21,8 @@ namespace TransportProject
 
         public void Remove(string token)
         {
-            _tokenToLoginMap.TryRemove(token, out var login);
-            _loginToTokenMap.TryRemove(login, out _);
+            if (_tokenToLoginMap.TryRemove(token, out var login))
+                _loginToTokenMap.TryRemove(login, out _);
         }
 
         public string GetLoginByToken(string token)

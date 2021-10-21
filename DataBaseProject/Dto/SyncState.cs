@@ -11,7 +11,7 @@ namespace DataBaseProject.Dto
         public int Id { get; set; }
         
         
-        [ForeignKey("login")]
+        [Column("login")]
         public string Login { get; set; }
         
         

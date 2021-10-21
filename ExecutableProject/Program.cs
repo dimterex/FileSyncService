@@ -23,7 +23,6 @@ namespace ExecutableProject
             var fileManager = new FileManager();
             var apiController = new ApiController();
             
-            
             IPAddress[] localIp = Dns.GetHostAddresses(Dns.GetHostName());
 
             string ipString = string.Empty;

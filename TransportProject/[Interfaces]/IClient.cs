@@ -1,13 +1,13 @@
 ﻿using SdkProject;
+using WebSocketSharp.Server;
 
 namespace TransportProject
 {
     public interface IClient
     {
         string ID { get; }
-        bool IsConnected { get; set; }
-        
-        void SendMessage(IMessage result);
+
+        void SendResponse(HttpRequestEventArgs e, IMessage response);
         
         void Close();
     }

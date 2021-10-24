@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Newtonsoft.Json;
 using NLog;
 using SdkProject;
@@ -45,6 +47,28 @@ namespace TransportProject
 
         #region Methods
 
+        public void SendResponse(HttpRequestEventArgs e, IMessage response)
+        {
+            e.Response.SendChunked = true;
+            
+            MessageContainer messageContainer = _service.Controller.SerializePacket(response);
+            
+            using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
+            {
+                
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                var jsonWriter = new JsonTextWriter(streamWriter);
+
+                try
+                {
+                    serializer.Serialize(jsonWriter, new [] { messageContainer });
+                }
+                finally
+                {
+                    jsonWriter.Close();
+                }
+            }
+        }
 
         public void InitializeRawData(IList<ushort> listenPorts)
         {
@@ -122,7 +146,6 @@ namespace TransportProject
             _logger.Debug(() => $"opened connection: {ID}");
 
             _service.Authorize(this);
-            IsConnected = true;
         }
 
         protected override void OnClose(CloseEventArgs e)
@@ -130,7 +153,6 @@ namespace TransportProject
             _logger.Debug(() => $"closed connection: {ID}");
 
             _service.Remove(this);
-            IsConnected = false;
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -177,28 +199,6 @@ namespace TransportProject
         public void Close()
         {
             Context.WebSocket.Close();
-        }
-
-        // public void SendPromiseStatus(int promiseId, long eventId, PromiseStates state, IMessage message)
-        // {
-        //     var response = new PromiseResponse
-        //     {
-        //         PromiseId = promiseId,
-        //         EventId = (ulong)eventId,
-        //         State = _promiseStateMapper.Transform(state),
-        //         // так как message может прилетать пустым, то нужно обрабатывать этот случай
-        //         Identifier = message != null ? _service.Controller.SerializePacket(message).Identifier : string.Empty,
-        //         Payload = message
-        //     };
-        //
-        //     SendMessage(response, true);
-        // }
-
-        public bool IsConnected { get; set; }
-
-        public void SendMessage(IMessage message)
-        {
-            SendMessage(message, false);
         }
 
         #endregion Methods

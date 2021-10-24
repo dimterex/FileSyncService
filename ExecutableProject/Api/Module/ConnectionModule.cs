@@ -3,7 +3,9 @@ using System.Linq;
 using DataBaseProject;
 using NLog;
 using SdkProject.Api.Connection;
+using SdkProject.Api.Sync;
 using TransportProject;
+using WebSocketSharp.Server;
 
 namespace Service.Api.Module
 {
@@ -24,17 +26,15 @@ namespace Service.Api.Module
 
         protected override void OnInitialize()
         {
-            RegisterMessage<ConnectionRequest>(OnConnectionRequest);
+            RegisterPostRequestWithBody<ConnectionRequest>(OnConnectionRequest);
         }
 
-        private void OnConnectionRequest(IClient client, ConnectionRequest connectionRequest)
+        private void OnConnectionRequest(IClient client, SyncFilesRequest arg2, ConnectionRequest connectionRequest, HttpRequestEventArgs e)
         {
             _connectionStateManager.Add(connectionRequest.Login, client.ID);
-           
-            
             var folders =  _userTableDataBase.GetAvailableFolders(connectionRequest.Login);
-            
-            client.SendMessage(new ConnectionResponse()
+
+            client.SendResponse(e, new ConnectionResponse()
             {
                 Shared_folders = folders.ToArray(),
                 Token = client.ID

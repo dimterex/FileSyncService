@@ -3,7 +3,7 @@
 namespace SdkProject.Api.Sync
 {
     [ApiMessage("FileAddResponse")]
-    public class FileAddResponce : IMessage
+    public class FileAddResponse : IMessage
     {
 
         [JsonProperty(PropertyName = "size")]
@@ -13,7 +13,7 @@ namespace SdkProject.Api.Sync
         public string FileName { get; set; }
 
 
-        public FileAddResponce()
+        public FileAddResponse()
         {
             Size = 0;
         }

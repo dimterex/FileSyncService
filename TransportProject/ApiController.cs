@@ -145,6 +145,11 @@ namespace TransportProject
               return _package.Serialize(message);
           }
 
+          public IMessage DeserializePacket(MessageContainer messageContainer)
+          {
+              return _package.Deserialize(messageContainer);
+          }
+
           public void AddClient(IClient wsClient)
           {
               _wsClient = wsClient;

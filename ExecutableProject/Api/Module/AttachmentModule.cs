@@ -61,7 +61,6 @@ namespace Service.Api.Module
             RegisterPostRequest<UploadRequest>(UPLOAD_REQUEST_NAME, HandleUploadRequest);
             RegisterGetRequest<DownloadRequest>(DOWNLOAD_REQUEST_NAME, HandleDownloadRequest);
         }
-        
 
         private void HandleUploadRequest(IClient client, UploadRequest request, HttpRequestEventArgs e)
         {

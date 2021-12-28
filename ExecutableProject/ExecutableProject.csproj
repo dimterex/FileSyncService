@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <None Include="C:\Users\UseR\.nuget\packages\nlog.config\4.6.7\contentFiles\any\any\NLog.config">
+      <None Include="NLog.config">
         <NuGetPackageId>NLog.Config</NuGetPackageId>
         <NuGetPackageVersion>4.6.7</NuGetPackageVersion>
         <NuGetItemType>None</NuGetItemType>
@@ -27,7 +27,7 @@
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="NLog" Version="5.0.0-preview.1" />
+      <PackageReference Include="NLog" Version="5.0.0-rc1" />
       <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
     </ItemGroup>
 

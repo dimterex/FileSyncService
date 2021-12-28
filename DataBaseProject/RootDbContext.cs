@@ -2,6 +2,7 @@
 using System.IO;
 using DataBaseProject.Dto;
 using Microsoft.EntityFrameworkCore;
+using NLog;
 
 namespace DataBaseProject
 {
@@ -13,11 +14,17 @@ namespace DataBaseProject
         
         public string DbPath { get; }
 
+        private readonly ILogger _logger;
+
         public RootDbContext()
         {
+   
             var folder = Environment.SpecialFolder.LocalApplicationData;
             var path = Environment.GetFolderPath(folder);
             DbPath = Path.Combine(path, "sync_service.db");
+
+            _logger = LogManager.GetCurrentClassLogger();
+            _logger.Info(() => $"Sync database path: {DbPath}");
             
             Database.EnsureCreated();
         }

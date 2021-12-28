@@ -36,14 +36,10 @@ namespace TransportProject
         private readonly int _httpPort;
         private readonly int _httpsPort;
 
-        private readonly List<IClient> _connections;
-        private readonly List<UnathorizedConnection> _unathorizedConnections;
-
         private static Dictionary<string, StaticFileEntry> _staticFiles;
 
         private HttpServer _wsServer;
         private HttpServer _wssServer;
-        private readonly Timer _stateCheckTimer;
         private readonly ILogger _logger;
 
         private Thread _socketThread;
@@ -78,9 +74,6 @@ namespace TransportProject
 
             _wsServer = null;
             _wssServer = null;
-            _connections = new List<IClient>();
-            _unathorizedConnections = new List<UnathorizedConnection>();
-            _stateCheckTimer = new Timer(CheckState, null, -1, -1);
 
             _staticFiles = new Dictionary<string, StaticFileEntry>();
 
@@ -99,8 +92,6 @@ namespace TransportProject
             _isActive = true;
             _socketThread = new Thread(BindSocketsWorker);
             _socketThread.Start();
-
-            _stateCheckTimer.Change(CHECK_INTERVAL, CHECK_INTERVAL);
         }
 
         private void BindSocketsWorker()
@@ -140,8 +131,6 @@ namespace TransportProject
                 _wssServer?.Stop();
                 _wssServer = null;
 
-                _stateCheckTimer.Change(-1, -1);
-
                 _logger.Debug("Threads were stopped.");
 
             }
@@ -151,35 +140,6 @@ namespace TransportProject
             }
         }
 
-        public void Add(IClient wsClient)
-        {
-            lock (_lockObject)
-            {
-                _unathorizedConnections.Add(new UnathorizedConnection(wsClient));
-            }
-        }
-
-        public void Authorize(IClient wsClient)
-        {
-            lock (_lockObject)
-            {
-                _unathorizedConnections.RemoveAll(a => a.Is(wsClient));
-                _connections.Add(wsClient);
-            }
-        }
-
-        public void Remove(IClient wsClient)
-        {
-            lock (_lockObject)
-            {
-                _connections.Remove(wsClient);
-                _connectionStateManager.Remove(wsClient.ID);
-            }
-        }
-
-        /// <summary>
-        /// Инициализация сервера для незащищённых соединений.
-        /// </summary>
         private void StartHttpServer()
         {
             if (_wsServer != null)
@@ -199,9 +159,6 @@ namespace TransportProject
             }
         }
 
-        /// <summary>
-        /// Инициализация сервера для защищённых соединений.
-        /// </summary>
         private void StartHttpsServer()
         {
             if (_wssServer != null)
@@ -227,51 +184,13 @@ namespace TransportProject
 
         private void InitHttpServer(HttpServer server)
         {
-            // Подготовка сервера для работы с WS-протоколом:
-            server.AddWebSocketService("/", () =>
-            {
-                var wsClient = new WsClient(this);
-                Controller.AddClient(wsClient);
-                return wsClient;
-            });
-            // Подготовка сервера для работы с REST-запросами:
             server.OnGet += HandleRequest;
             server.OnPost += HandleRequest;
-
             server.Start();
-        }
-
-
-        private void CheckState(object state)
-        {
-            if (!Monitor.TryEnter(_lockObject))
-                return;
-
-            try
-            {
-                var index = 0;
-                while (index < _unathorizedConnections.Count)
-                {
-                    var unathorizedConnection = _unathorizedConnections[index];
-
-                    if (unathorizedConnection.Check())
-                    {
-                        _unathorizedConnections.RemoveAt(index);
-                        continue;
-                    }
-
-                    index += 1;
-                }
-            }
-            finally
-            {
-                Monitor.Exit(_lockObject);
-            }
         }
 
         private void InitializeStatic()
         {
-            // TODO add configuration checks
             var staticPath = Path.Combine("", STATIC_FILE);
             if (!File.Exists(staticPath))
                 return;
@@ -283,7 +202,6 @@ namespace TransportProject
                 staticFile = new FileStream(staticPath, FileMode.Open);
                 archive = new ZipArchive(staticFile, ZipArchiveMode.Read);
 
-                // TODO Add other types
                 var headers = new Dictionary<string, StaticFileHeaders>
                 {
                     [".css"] = new StaticFileHeaders(Encoding.UTF8, "text/css"),
@@ -333,19 +251,14 @@ namespace TransportProject
             }
         }
 
-
-        /// <summary>
-        /// Основной обработчик REST-запросов.
-        /// </summary>
         private void HandleRequest(object sender, HttpRequestEventArgs e)
         {
-            // Определение запроса:
-            if (e.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH)) // REST-запрос для API с проверкой токена.
+            if (e.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
             {
-                e.Response.Headers.Add("Access-Control-Allow-Origin: *"); // Разрешить доступ к JSON с серверной машины.
+                e.Response.Headers.Add("Access-Control-Allow-Origin: *");
                 Controller.HandleRequest(e.Request.Url.AbsolutePath.Substring(ApiController.API_RESOURCE_PATH.Length), e);
             }
-            else // Запрос не является специальным или запросом API, возможно ожидаются ресурсы.
+            else
             {
                 if (e.Request.HttpMethod == "GET")
                 {

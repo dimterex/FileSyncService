@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace SdkProject.Api.Attach
+namespace SdkProject.Api.Files
 {
     public class UploadRequest : IMessage
     {

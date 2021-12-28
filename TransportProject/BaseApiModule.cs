@@ -16,9 +16,8 @@ namespace TransportProject
     {
         #region Fields
 
-        private readonly Dictionary<Type, Action<IClient, IMessage>> _methods;
-        private readonly Dictionary<string, Action<IClient, HttpRequestEventArgs>> _restMethods;
-        private readonly Dictionary<Type, Action<IClient, IMessage, IMessage, HttpRequestEventArgs>> _restRequestMethods;
+        private readonly Dictionary<string, Action<HttpRequestEventArgs>> _restMethods;
+        private readonly Dictionary<Type, Action<IMessage, IMessage, HttpRequestEventArgs>> _restRequestMethods;
 
         #endregion Fields
 
@@ -30,7 +29,6 @@ namespace TransportProject
 
         public ApiController ApiController { get; private set; }
 
-        public string Path => $"{ApiController.API_RESOURCE_PATH}/{Name}/{Version.Major}";
 
         #endregion Properties
 
@@ -41,9 +39,8 @@ namespace TransportProject
             Name = name;
             Version = version;
 
-            _methods = new Dictionary<Type, Action<IClient, IMessage>>();
-            _restMethods = new Dictionary<string, Action<IClient, HttpRequestEventArgs>>();
-            _restRequestMethods = new Dictionary<Type, Action<IClient, IMessage, IMessage, HttpRequestEventArgs>>();
+            _restMethods = new Dictionary<string, Action<HttpRequestEventArgs>>();
+            _restRequestMethods = new Dictionary<Type, Action<IMessage, IMessage, HttpRequestEventArgs>>();
         } 
 
         #endregion Constructors
@@ -60,7 +57,7 @@ namespace TransportProject
             const string request = "request";
             
             ApiController.RegisterRequest(request, this);
-            _restMethods.Add($"{"POST"} {Version.Major}/{request}", (client, e) =>
+            _restMethods.Add($"{"POST"} {Version.Major}/{request}", (e) =>
             {
                 
                 var data = DeserializeFromStream(e.Request.InputStream).ToString();
@@ -72,59 +69,28 @@ namespace TransportProject
                     
                     var type = payload.GetType();
                     
-                    if (!_restRequestMethods.TryGetValue(type, out Action<IClient, IMessage, IMessage, HttpRequestEventArgs> method))
+                    if (!_restRequestMethods.TryGetValue(type, out Action<IMessage, IMessage, HttpRequestEventArgs> method))
                         return;
               
-                    method(client, DeserializeRequest<SyncFilesRequest>(e.Request.QueryString), payload, e);
+                    method(DeserializeRequest<SyncFilesRequest>(e.Request.QueryString), payload, e);
                 }
             });
             
             OnInitialize();
         }
 
-        public void Handle(IClient client, IMessage payload)
+        public void Handle(string resource, HttpRequestEventArgs e)
         {
-            var type = payload.GetType();
-
-            if (!_methods.TryGetValue(type, out Action<IClient, IMessage> method))
-                return;
-
-            method(client, payload);
-        }
-
-        /// <summary>
-        /// Выполнение необходимого обработчика на REST-запрос.
-        /// </summary>
-        public void Handle(IClient client, string resource, HttpRequestEventArgs e)
-        {
-            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out Action<IClient, HttpRequestEventArgs> method)) // Метод обработки не зарегистрирован.
+            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out Action<HttpRequestEventArgs> method))
             {
                 e.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 e.Response.StatusDescription = $"Unknown {e.Request.HttpMethod}-method '{resource}' or module '{Name}'.";
                 return;
             }
 
-            method(client, e);
+            method(e);
         }
   
-
-        /// <summary>
-        /// Регистрирует обработчик сообщения.
-        /// </summary>
-        /// <typeparam name="T">Тип сообщения.</typeparam>
-        /// <param name="method">Делегат-обработчик сообщения.</param>
-        protected void RegisterMessage<T>(Action<IClient, T> method)
-        {
-            ApiController.RegisterMessage<T>(this);
-            _methods.Add(typeof(T), (client, message) => method(client, (T)message));
-        }
-
-        /// <summary>
-        /// Десериализация параметров REST-запроса в объект для обработчика.
-        /// </summary>
-        /// <typeparam name="T">Тип объекта.</typeparam>
-        /// <param name="query">Строка с параметрами.</param>
-        /// <returns>Объект подготовленными полями.</returns>
         private static T DeserializeRequest<T>(NameValueCollection query)
         {
             return JsonConvert.DeserializeObject<T>(
@@ -145,46 +111,29 @@ namespace TransportProject
             }
         }
         
-
-        /// <summary>
-        /// Регистрирует обработчик REST GET-запроса.
-        /// </summary>
-        /// <param name="resourceName">Имя запроса.</param>
-        /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterGetRequest<T>(string resourceName, Action<IClient, T, HttpRequestEventArgs> method)
+        protected void RegisterGetRequest<T>(string resourceName, Action<T, HttpRequestEventArgs> method)
         {
             RegisterRequest<T>("GET", resourceName, method);
         }
 
-        /// <summary>
-        /// Регистрирует обработчик REST POST-запроса.
-        /// </summary>
-        /// <param name="resourceName">Имя запроса.</param>
-        /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterPostRequest<T>(string resourceName, Action<IClient, T, HttpRequestEventArgs> method)
+        protected void RegisterPostRequest<T>(string resourceName, Action<T, HttpRequestEventArgs> method)
         {
             RegisterRequest<T>("POST", resourceName, method);
         }
 
-        /// <summary>
-        /// Регистрирует обработчик REST-запроса.
-        /// </summary>
-        /// <param name="httpMethod">Http метод.</param>
-        /// <param name="resourceName">Имя запроса.</param>
-        /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterRequest<T>(string httpMethod, string resourceName, Action<IClient, T, HttpRequestEventArgs> method)
+        private void RegisterRequest<T>(string httpMethod, string resourceName, Action<T, HttpRequestEventArgs> method)
         {
             ApiController.RegisterRequest(resourceName, this);
-            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}", (client, e) => method(client, DeserializeRequest<T>(e.Request.QueryString), e));
+            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}", (e) => method(DeserializeRequest<T>(e.Request.QueryString), e));
         }
         
         /// <summary>
         /// Регистрирует обработчик REST POST-запроса.
         /// </summary>
         /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterPostRequestWithBody<TResponse>(Action<IClient, SyncFilesRequest, TResponse, HttpRequestEventArgs> method)
+        protected void RegisterPostRequestWithBody<TResponse>(Action<SyncFilesRequest, TResponse, HttpRequestEventArgs> method)
         {
-            _restRequestMethods.Add(typeof(TResponse), (client, request, response, e) => method(client, (SyncFilesRequest)request, (TResponse)response, e));
+            _restRequestMethods.Add(typeof(TResponse), (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
         } 
         
 

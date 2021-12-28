@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using DataBaseProject;
 using NLog;
-using SdkProject.Api.Attach;
+using SdkProject.Api.Files;
 using TransportProject;
 
 namespace Service.Api
@@ -55,7 +55,7 @@ namespace Service.Api
 
             if (contentLength < 0)
             {
-                response.Result = AttachmentOperationResult.UnexpectedError;
+                response.Result = FilesOperationResult.UnexpectedError;
                 errorMessage = "Unable to determine file size";
                 return false;
             }
@@ -65,7 +65,7 @@ namespace Service.Api
                 stream.CopyTo(fileStream);
             }
             
-            response.Result = AttachmentOperationResult.Success;
+            response.Result = FilesOperationResult.Success;
             response.FileId = Guid.NewGuid().ToString();
 
             errorStatusCode = HttpStatusCode.OK;

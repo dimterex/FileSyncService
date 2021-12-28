@@ -10,10 +10,8 @@ namespace DataBaseProject.Dto
         [Key]
         public int Id { get; set; }
         
-        
         [Column("login")]
         public string Login { get; set; }
-        
         
         [Column("file_path")]
         public string FilePath { get; set; }

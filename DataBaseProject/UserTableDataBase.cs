@@ -19,7 +19,6 @@ namespace DataBaseProject
 
             using (var dataBase = _dataBaseFactory.Create())
             {
-                // получаем объекты из бд и выводим на консоль
                 var users = dataBase.Users.ToList().FirstOrDefault(x => x.Login == login);
             
                 if (users != null)

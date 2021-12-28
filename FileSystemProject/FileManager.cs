@@ -14,7 +14,6 @@ namespace FileSystemProject
             _logger = LogManager.GetCurrentClassLogger();
         }
             
-            
         public IList<string> GetFiles(string folderPath)
         {
             var ls = GetFileDatas(folderPath);
@@ -60,7 +59,6 @@ namespace FileSystemProject
 
             return result;
         }
-
 
         public void RemoveFiles(IList<string> toRemoveList)
         {

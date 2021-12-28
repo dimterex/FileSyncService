@@ -1,5 +1,6 @@
 ﻿using DataBaseProject;
 using FileSystemProject;
+using SdkProject.Api.Connection;
 using SdkProject.Api.Sync;
 using TransportProject;
 using WebSocketSharp.Server;
@@ -13,7 +14,7 @@ namespace Service.Api.Module
     using System.IO;
     using System.Linq;
 
-    public class SyncModule : BaseApiModule
+    public class CoreModule : BaseApiModule
     {
         private readonly IFileManager _fileManager;
         private readonly ISyncTableDataBase _syncTableDataBase;
@@ -21,10 +22,10 @@ namespace Service.Api.Module
         private readonly IConnectionStateManager _connectionStateManager;
         private readonly ILogger _logger;
 
-        public SyncModule(IFileManager fileManager,
+        public CoreModule(IFileManager fileManager,
             ISyncTableDataBase syncTableDataBase,
             IConnectionStateManager connectionStateManager,
-            IUserTableDataBase userTableDataBase) : base("sync", new Version(0,1))
+            IUserTableDataBase userTableDataBase) : base("core", new Version(0,1))
         {
             _logger = LogManager.GetCurrentClassLogger();
             _fileManager = fileManager;
@@ -36,11 +37,34 @@ namespace Service.Api.Module
         protected override void OnInitialize()
         {
             RegisterPostRequestWithBody<SyncFilesBodyRequest>(OnSyncFilesRequest);
+            RegisterPostRequestWithBody<ConnectionRequest>(OnConnectionRequest);
+        }
+
+        private void OnConnectionRequest(IClient client, SyncFilesRequest arg2, ConnectionRequest connectionRequest, HttpRequestEventArgs e)
+        {
+            try
+            {
+                var token = Guid.NewGuid();
+                _connectionStateManager.Add(connectionRequest.Login, token.ToString());
+                var folders =  _userTableDataBase.GetAvailableFolders(connectionRequest.Login);
+
+                ApiController.SendResponse(e, new ConnectionResponse()
+                {
+                    Shared_folders = folders.ToArray(),
+                    Token = token.ToString()
+                });
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                throw;
+            }
+           
         }
 
         private void OnSyncFilesRequest(IClient client, SyncFilesRequest fileAction, SyncFilesBodyRequest bodyRequest, HttpRequestEventArgs e)
         {
-            var login = _connectionStateManager.GetLoginByToken(client.ID);
+            var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
             
             var syncFiles = _syncTableDataBase.GetSyncStates(login);
             var toRemoveInServer = _fileManager.CompairFolders(syncFiles, bodyRequest.Files);
@@ -73,7 +97,7 @@ namespace Service.Api.Module
             SendFilesAddResponce(needToAdd, client, response);
             SendFilesRemoveResponce(needToRemove, client, response);
             
-            client.SendResponse(e, response);
+            ApiController.SendResponse(e, response);
             _syncTableDataBase.RemoveSyncStates(login, needToRemove);
         }
 

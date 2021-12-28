@@ -22,40 +22,21 @@ namespace ExecutableProject
             var connectionStateManager = new ConnectionStateManager();
             var fileManager = new FileManager();
             var apiController = new ApiController();
+            var settingsManager = new SettingsManager();
             
-            IPAddress[] localIp = Dns.GetHostAddresses(Dns.GetHostName());
-
-            string ipString = string.Empty;
-
-            foreach (IPAddress address in localIp)
-            {
-                if (address.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    ipString = address.ToString();
-                    break;
-                }
-            }
-
             var syncDb = new SyncTableDataBase();
             var userDb = new UserTableDataBase();
             
-            
-            // TODO: Вынести в настройки.
-            var port = 1234;
-
-            var syncModule = new SyncModule(fileManager, syncDb, connectionStateManager, userDb);
+            var syncModule = new CoreModule(fileManager, syncDb, connectionStateManager, userDb);
             syncModule.Initialize(apiController);
 
-            var attachModule = new AttachmentApi(new AttachmentService(connectionStateManager, syncDb));
+            var attachModule = new FilesApi(new AttachmentService(connectionStateManager, syncDb));
             attachModule.Initialize(apiController);
-
-            var connectionModule = new ConnectionModule(connectionStateManager, userDb);
-            connectionModule.Initialize(apiController);
 
             var configModule = new ConfigurationModule(userDb, syncDb);
             configModule.Initialize(apiController);
             
-            var ws = new WsService(connectionStateManager, apiController, IPAddress.Parse(ipString), port, port++ );
+            var ws = new WsService(connectionStateManager, apiController, IPAddress.Parse(settingsManager.Settings.IpAddress), settingsManager.Settings.HttpPort, settingsManager.Settings.HttpsPort);
             ws.Start();
 
             // TODO: Добавить CancellationToken

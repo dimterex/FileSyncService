@@ -4,13 +4,13 @@ using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 using NLog;
-using SdkProject.Api.Attach;
+using SdkProject.Api.Files;
 using TransportProject;
 using WebSocketSharp.Server;
 
 namespace Service.Api.Module
 {
-    public class AttachmentApi : BaseApiModule
+    public class FilesApi : BaseApiModule
     {
 
         #region Constants
@@ -31,14 +31,13 @@ namespace Service.Api.Module
 
         private readonly Logger _logger;
         private readonly AttachmentService _attachmentService;
-    
 
         #endregion
 
         #region Constructors
 
 
-        public AttachmentApi(AttachmentService attachmentService) : base("attachment", new Version(0, 1))
+        public FilesApi(AttachmentService attachmentService) : base("files", new Version(0, 1))
         {
             _logger = LogManager.GetCurrentClassLogger();
             _attachmentService = attachmentService;
@@ -50,13 +49,6 @@ namespace Service.Api.Module
 
         protected override void OnInitialize()
         {
-            // Регистрация обработчиков WS-запросов:
-            // RegisterInitMessage<InitializationRequest>(HandleInitializationRequest);
-            // RegisterMessage<InitializationResponse>(HandleInitializationResponse);
-            // RegisterMessage<MetadataRequest>(HandleMetadataRequest);
-            // RegisterMessage<MetadataResponse>(HandleMetadataResponse);
-            // RegisterMessage<AttachmentFileBroadcast>(HandleAttachmentFileBroadcast);
-
             // Регистрация обработчиков для REST-запросов:
             RegisterPostRequest<UploadRequest>(UPLOAD_REQUEST_NAME, HandleUploadRequest);
             RegisterGetRequest<DownloadRequest>(DOWNLOAD_REQUEST_NAME, HandleDownloadRequest);

@@ -2,20 +2,20 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace SdkProject.Api.Attach
+namespace SdkProject.Api.Files
 {
     public class UploadResponse : IMessage
     {
         [JsonProperty(PropertyName = "result")]
         [JsonConverter(typeof (StringEnumConverter))]
-        public AttachmentOperationResult Result { get; set; }
+        public FilesOperationResult Result { get; set; }
 
         [JsonProperty(PropertyName = "file_id")]
         public string FileId { get; set; }
     }
     
     
-    public enum AttachmentOperationResult
+    public enum FilesOperationResult
     {
         [EnumMember(Value = "success")] Success,
         [EnumMember(Value = "restricted_format")] RestrictedFormat,

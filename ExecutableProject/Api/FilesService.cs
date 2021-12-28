@@ -8,7 +8,7 @@ using TransportProject;
 
 namespace Service.Api
 {
-     public class AttachmentService
+     public class FilesService
     {
         private readonly IConnectionStateManager _connectionStateManager;
         private readonly ISyncTableDataBase _syncTableDataBase;
@@ -28,12 +28,12 @@ namespace Service.Api
 
         #region Constructor
 
-        public AttachmentService(IConnectionStateManager connectionStateManager,
+        public FilesService(IConnectionStateManager connectionStateManager,
                                 ISyncTableDataBase syncTableDataBase)
         {
             _connectionStateManager = connectionStateManager;
             _syncTableDataBase = syncTableDataBase;
-            _logger = LogManager.GetLogger(nameof(AttachmentService));
+            _logger = LogManager.GetCurrentClassLogger();
             _logger.Info("init");
         }
 

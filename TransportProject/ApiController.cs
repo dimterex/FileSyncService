@@ -29,11 +29,6 @@ namespace TransportProject
         }
         
         
-        /// <summary>
-        /// Обработка полученного REST-запроса.
-        /// </summary>
-        /// <param name="resource">REST-запрос без префикса API. Например "/module_name/resource_name".</param>
-        /// <param name="e">Параметры запроса.</param>
         public void HandleRequest(string resource, HttpRequestEventArgs e)
         {
             try

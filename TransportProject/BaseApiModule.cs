@@ -135,7 +135,6 @@ namespace TransportProject
         {
             _restRequestMethods.Add(typeof(TResponse), (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
         } 
-        
 
         protected virtual void OnInitialize()
         {

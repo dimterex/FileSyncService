@@ -30,17 +30,17 @@ namespace Service.Api.Module
         #region Fields
 
         private readonly Logger _logger;
-        private readonly AttachmentService _attachmentService;
+        private readonly FilesService _filesService;
 
         #endregion
 
         #region Constructors
 
 
-        public FilesApi(AttachmentService attachmentService) : base("files", new Version(0, 1))
+        public FilesApi(FilesService filesService) : base("files", new Version(0, 1))
         {
             _logger = LogManager.GetCurrentClassLogger();
-            _attachmentService = attachmentService;
+            _filesService = filesService;
         }
 
         #endregion
@@ -54,9 +54,9 @@ namespace Service.Api.Module
             RegisterGetRequest<DownloadRequest>(DOWNLOAD_REQUEST_NAME, HandleDownloadRequest);
         }
 
-        private void HandleUploadRequest(IClient client, UploadRequest request, HttpRequestEventArgs e)
+        private void HandleUploadRequest(UploadRequest request, HttpRequestEventArgs e)
         {
-            bool isValidRequest = _attachmentService.HandleUploadRequest(
+            bool isValidRequest = _filesService.HandleUploadRequest(
                 request,
                 e.Request.InputStream,
                 e.Request.ContentLength64,
@@ -87,11 +87,11 @@ namespace Service.Api.Module
             }
         }
 
-        private void HandleDownloadRequest(IClient client, DownloadRequest request, HttpRequestEventArgs e)
+        private void HandleDownloadRequest(DownloadRequest request, HttpRequestEventArgs e)
         {
             e.Response.SendChunked = true;
 
-            if (_attachmentService.HandleDownloadRequest(request, e.Response.OutputStream, out HttpStatusCode errorStatusCode, out string errorMessage))
+            if (_filesService.HandleDownloadRequest(request, e.Response.OutputStream, out HttpStatusCode errorStatusCode, out string errorMessage))
                 return;
 
             e.Response.StatusCode = (int)errorStatusCode;

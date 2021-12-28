@@ -30,7 +30,7 @@ namespace ExecutableProject
             var syncModule = new CoreModule(fileManager, syncDb, connectionStateManager, userDb);
             syncModule.Initialize(apiController);
 
-            var attachModule = new FilesApi(new AttachmentService(connectionStateManager, syncDb));
+            var attachModule = new FilesApi(new FilesService(connectionStateManager, syncDb));
             attachModule.Initialize(apiController);
 
             var configModule = new ConfigurationModule(userDb, syncDb);

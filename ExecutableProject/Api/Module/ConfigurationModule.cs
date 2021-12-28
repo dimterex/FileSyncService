@@ -1,7 +1,9 @@
 ﻿using System;
 using DataBaseProject;
 using SdkProject.Api.Confguration;
+using SdkProject.Api.Sync;
 using TransportProject;
+using WebSocketSharp.Server;
 
 namespace Service.Api.Module
 {
@@ -19,11 +21,11 @@ namespace Service.Api.Module
         
         protected override void OnInitialize()
         {
-            RegisterMessage<CreateUserRequest>(OnCreateUserRequest);
-            RegisterMessage<CreateSyncStateRequest>(OnCreateSyncStateRequest);
+            RegisterPostRequestWithBody<CreateUserRequest>(OnCreateUserRequest);
+            RegisterPostRequestWithBody<CreateSyncStateRequest>(OnCreateSyncStateRequest);
         }
 
-        private void OnCreateSyncStateRequest(IClient client, CreateSyncStateRequest request)
+        private void OnCreateSyncStateRequest(SyncFilesRequest syncFilesRequest, CreateSyncStateRequest request, HttpRequestEventArgs arg3)
         {
             foreach (var file in request.SyncFiles)
             {
@@ -31,7 +33,7 @@ namespace Service.Api.Module
             }
         }
 
-        private void OnCreateUserRequest(IClient client, CreateUserRequest request)
+        private void OnCreateUserRequest(SyncFilesRequest syncFilesRequest, CreateUserRequest request, HttpRequestEventArgs arg3)
         {
             _userTableDataBase.AddOrUpdate(request.Login, request.Password, request.AvailableFolders);
         }

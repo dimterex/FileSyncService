@@ -40,7 +40,7 @@ namespace Service.Api.Module
             RegisterPostRequestWithBody<ConnectionRequest>(OnConnectionRequest);
         }
 
-        private void OnConnectionRequest(IClient client, SyncFilesRequest arg2, ConnectionRequest connectionRequest, HttpRequestEventArgs e)
+        private void OnConnectionRequest(SyncFilesRequest arg2, ConnectionRequest connectionRequest, HttpRequestEventArgs e)
         {
             try
             {
@@ -59,10 +59,9 @@ namespace Service.Api.Module
                 Console.WriteLine(exception);
                 throw;
             }
-           
         }
 
-        private void OnSyncFilesRequest(IClient client, SyncFilesRequest fileAction, SyncFilesBodyRequest bodyRequest, HttpRequestEventArgs e)
+        private void OnSyncFilesRequest(SyncFilesRequest fileAction, SyncFilesBodyRequest bodyRequest, HttpRequestEventArgs e)
         {
             var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
             
@@ -93,15 +92,15 @@ namespace Service.Api.Module
 
             var response = new SyncFilesResponse();
             
-            SendUploadRequest(toDownloadInServer, client, response);
-            SendFilesAddResponce(needToAdd, client, response);
-            SendFilesRemoveResponce(needToRemove, client, response);
+            SendUploadRequest(toDownloadInServer, response);
+            SendFilesAddResponse(needToAdd, response);
+            SendFilesRemoveResponse(needToRemove, response);
             
             ApiController.SendResponse(e, response);
             _syncTableDataBase.RemoveSyncStates(login, needToRemove);
         }
 
-        private void SendUploadRequest(IList<string> notExistInServer, IClient client, SyncFilesResponse response)
+        private void SendUploadRequest(IList<string> notExistInServer, SyncFilesResponse response)
         {
             foreach (string baseFileInfo in notExistInServer)
             {
@@ -111,7 +110,7 @@ namespace Service.Api.Module
             }
         }
 
-        private void SendFilesAddResponce(IList<string> not_exist_in_client, IClient client, SyncFilesResponse response)
+        private void SendFilesAddResponse(IList<string> not_exist_in_client, SyncFilesResponse response)
         {
             foreach (string baseFileInfo in not_exist_in_client)
             {
@@ -124,7 +123,7 @@ namespace Service.Api.Module
             }
         }
 
-        private void SendFilesRemoveResponce(IList<string> not_exist_in_server, IClient client, SyncFilesResponse response)
+        private void SendFilesRemoveResponse(IList<string> not_exist_in_server, SyncFilesResponse response)
         {
             foreach (string baseFileInfo in not_exist_in_server)
             {

@@ -28,30 +28,44 @@ namespace DataBaseProject
             return result;
         }
 
-        public void AddOrUpdate(string login, string password, string[] availableFolders)
+        public void Add(string login, string password, string availableFolderPath)
         {
             using (var dataBase = _dataBaseFactory.Create())
             {
-                // получаем объекты из бд и выводим на консоль
                 var users = dataBase.Users.ToList().FirstOrDefault(x => x.Login == login);
 
                 if (users != null)
                 {
                     users.Password = password;
-                    users.AvailableFolders.Clear();
-                    users.AvailableFolders.AddRange(availableFolders);
+                    users.AvailableFolders.Add(availableFolderPath);
                 }
-
                 else
                 {
                     dataBase.Users.Add(new User()
                     {
                         Login = login,
                         Password = password,
-                        AvailableFolders = new List<string>(availableFolders)
+                        AvailableFolders = new List<string>() { availableFolderPath }
                     });
                 }
                 
+                dataBase.ApplyChanges();
+            }
+        }
+
+        public void Remove(string login, string password, string availableFolderPath)
+        {
+            using (var dataBase = _dataBaseFactory.Create())
+            {
+                var users = dataBase.Users.ToList().FirstOrDefault(x => x.Login == login);
+
+                if (users != null)
+                {
+                    users.Password = password;
+                    users.AvailableFolders.Remove(availableFolderPath);
+                  
+                }
+
                 dataBase.ApplyChanges();
             }
         }

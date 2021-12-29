@@ -34,7 +34,6 @@ namespace Service.Api
             _connectionStateManager = connectionStateManager;
             _syncTableDataBase = syncTableDataBase;
             _logger = LogManager.GetCurrentClassLogger();
-            _logger.Info("init");
         }
 
         #endregion Constructor
@@ -58,6 +57,13 @@ namespace Service.Api
                 response.Result = FilesOperationResult.UnexpectedError;
                 errorMessage = "Unable to determine file size";
                 return false;
+            }
+
+            var fileInfo = new FileInfo(request.FileName);
+            if (!fileInfo.Directory.Exists)
+            {
+                fileInfo.Directory.Create();
+                _logger.Info(() => $"Directory {fileInfo.Directory} created.");
             }
 
             using (var fileStream = File.Create(request.FileName))
@@ -103,6 +109,7 @@ namespace Service.Api
                 {
                     stream.Write(buffer, 0, count);
                     stream.Flush();
+                    _logger.Trace(() => $"Sending {request.FilePath} ${count}/{reader.Length}");
                 }
             }
 

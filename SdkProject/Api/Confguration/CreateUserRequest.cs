@@ -8,11 +8,10 @@ namespace SdkProject.Api.Confguration
         [JsonProperty(PropertyName = "login")]
         public string Login { get; set; }
         
-        
         [JsonProperty(PropertyName = "password")]
         public string Password { get; set; }
         
         [JsonProperty(PropertyName = "available_folders")]
-        public string[] AvailableFolders { get; set; }
+        public AvailableFolder[] AvailableFolders { get; set; }
     }
 }

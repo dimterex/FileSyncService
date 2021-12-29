@@ -24,7 +24,6 @@ namespace DataBaseProject
             DbPath = Path.Combine(path, "sync_service.db");
 
             _logger = LogManager.GetCurrentClassLogger();
-            _logger.Info(() => $"Sync database path: {DbPath}");
             
             Database.EnsureCreated();
         }

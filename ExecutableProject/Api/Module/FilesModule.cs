@@ -56,6 +56,8 @@ namespace Service.Api.Module
 
         private void HandleUploadRequest(UploadRequest request, HttpRequestEventArgs e)
         {
+            _logger.Debug(() => $"Upload {request.FileName}");
+            
             bool isValidRequest = _filesService.HandleUploadRequest(
                 request,
                 e.Request.InputStream,
@@ -91,9 +93,10 @@ namespace Service.Api.Module
         {
             e.Response.SendChunked = true;
 
+            _logger.Debug(() => $"Download {request.FilePath}");
             if (_filesService.HandleDownloadRequest(request, e.Response.OutputStream, out HttpStatusCode errorStatusCode, out string errorMessage))
                 return;
-
+            
             e.Response.StatusCode = (int)errorStatusCode;
             _logger.Trace(() => errorMessage);
         }

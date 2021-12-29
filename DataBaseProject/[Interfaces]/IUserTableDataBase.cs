@@ -5,6 +5,7 @@ namespace DataBaseProject
     public interface IUserTableDataBase
     {
         IList<string> GetAvailableFolders(string login);
-        void AddOrUpdate(string login, string password, string[] availableFolders);
+        void Add(string login, string password, string availableFolderPath);
+        void Remove(string login, string password, string availableFolderPath);
     }
 }

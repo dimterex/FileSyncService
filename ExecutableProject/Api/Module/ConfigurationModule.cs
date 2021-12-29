@@ -35,7 +35,21 @@ namespace Service.Api.Module
 
         private void OnCreateUserRequest(SyncFilesRequest syncFilesRequest, CreateUserRequest request, HttpRequestEventArgs arg3)
         {
-            _userTableDataBase.AddOrUpdate(request.Login, request.Password, request.AvailableFolders);
+            foreach (var availableFolder in request.AvailableFolders)
+            {
+                switch (availableFolder.AvailableFolderAction)
+                {
+                    case AvailableFolderAction.Add:
+                        _userTableDataBase.Add(request.Login, request.Password, availableFolder.Path);
+                        break;
+                    case AvailableFolderAction.Remove:
+                        _userTableDataBase.Remove(request.Login, request.Password, availableFolder.Path);
+                        _syncTableDataBase.RemoveSyncStatesByAvailableFolder(request.Login, availableFolder.Path);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
         }
     }
 }

@@ -57,12 +57,28 @@ namespace DataBaseProject
                         where b.Login == login && paths.Contains(b.FilePath)
                         select b;
 
-
                     dataBase.SyncStates.RemoveRange(syncState);
                     dataBase.ApplyChanges();
                 }
             });
 
+        }
+
+        public void RemoveSyncStatesByAvailableFolder(string login, string availableFolderPath)
+        {
+            Task.Run(() =>
+            {
+                using (var dataBase = _dataBaseFactory.Create())
+                {
+                    
+                    var syncState = from b in dataBase.SyncStates
+                        where b.Login == login && b.FilePath.StartsWith(availableFolderPath)
+                        select b;
+
+                    dataBase.SyncStates.RemoveRange(syncState);
+                    dataBase.ApplyChanges();
+                }
+            });
         }
     }
 }

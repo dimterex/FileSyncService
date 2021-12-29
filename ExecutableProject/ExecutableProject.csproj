@@ -22,6 +22,7 @@
       <ProjectReference Include="..\DataBaseProject\DataBaseProject.csproj" />
       <ProjectReference Include="..\FileSystemProject\FileSystemProject.csproj" />
       <ProjectReference Include="..\SdkProject\SdkProject.csproj" />
+      <ProjectReference Include="..\TelegramBotProject\TelegramBotProject.csproj" />
       <ProjectReference Include="..\TransportProject\TransportProject.csproj" />
     </ItemGroup>
 

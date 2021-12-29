@@ -14,5 +14,11 @@ namespace ExecutableProject
         
         [JsonProperty(PropertyName = "ip")]
         public string IpAddress { get; set; }
+        
+        [JsonProperty(PropertyName = "telegram_id")]
+        public int Telegram_id { get; set; }
+        
+        [JsonProperty(PropertyName = "token")]
+        public string Token { get; set; }
     }
 }

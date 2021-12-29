@@ -60,13 +60,40 @@ namespace FileSystemProject
             return result;
         }
 
-        public void RemoveFiles(IList<string> toRemoveList)
+        public void RemoveFile(string filePath)
         {
-            foreach (var filePath in toRemoveList)
+            _logger.Debug(() => $"Remove {filePath}");
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
+
+        public IList<string> RemoveEmptyDirectories(IList<string> directories)
+        {
+            var result = new List<string>();
+            
+            foreach (var directory in directories)
             {
-                _logger.Debug(() => $"Remove {filePath}");
-                if (File.Exists(filePath))
-                    File.Delete(filePath);
+                if (string.IsNullOrWhiteSpace(directory))
+                    continue;
+                processDirectory(directory, result);
+            }
+
+            return result;
+        }
+        
+        private void processDirectory(string startLocation, IList<string> directories)
+        {
+            foreach (var directory in Directory.GetDirectories(startLocation))
+            {
+                processDirectory(directory, directories);
+                if (Directory.GetFiles(directory).Length != 0)
+                    continue;
+                        
+                if (Directory.GetDirectories(directory).Length != 0)
+                    continue;
+                        
+                // Directory.Delete(directory, false);
+                directories.Add(directory);
             }
         }
     }

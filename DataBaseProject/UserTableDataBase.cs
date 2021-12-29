@@ -27,6 +27,22 @@ namespace DataBaseProject
             
             return result;
         }
+        
+        public IList<string> GetAvailableFolders()
+        {
+            var result = new List<string>();
+
+            using (var dataBase = _dataBaseFactory.Create())
+            {
+                var users = dataBase.Users.ToList();
+                foreach (var user in users)
+                {
+                    result.AddRange(user.AvailableFolders);
+                }
+            }
+            
+            return result;
+        }
 
         public void Add(string login, string password, string availableFolderPath)
         {

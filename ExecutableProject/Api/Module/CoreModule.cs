@@ -56,7 +56,7 @@ namespace Service.Api.Module
             }
             catch (Exception exception)
             {
-                Console.WriteLine(exception);
+                _logger.Error(() => $"{exception}");
                 throw;
             }
         }
@@ -68,7 +68,6 @@ namespace Service.Api.Module
             var syncFiles = _syncTableDataBase.GetSyncStates(login);
             var toRemoveInServer = _fileManager.CompairFolders(syncFiles, bodyRequest.Files);
             _syncTableDataBase.RemoveSyncStates(login, toRemoveInServer);
-            
 
             var toDownloadInServer = _fileManager.CompairFolders(bodyRequest.Files, syncFiles);
             
@@ -87,8 +86,12 @@ namespace Service.Api.Module
             
             var needToAdd = notExistInClient.Where(x => !syncFiles.Contains(x)).ToList();
             var needToRemove = notExistInServer.Where(x => syncFiles.Contains(x)).ToList();
-            
-            _fileManager.RemoveFiles(toRemoveInServer);
+
+            foreach (var filePath in toRemoveInServer.ToList())
+            {  
+                _fileManager.RemoveFile(filePath);
+                RaiseSendMessage($"Remove {filePath}");
+            }
 
             var response = new SyncFilesResponse();
             

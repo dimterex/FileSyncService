@@ -31,16 +31,18 @@ namespace Service.Api.Module
 
         private readonly Logger _logger;
         private readonly FilesService _filesService;
+        private readonly IConnectionStateManager _connectionStateManager;
 
         #endregion
 
         #region Constructors
 
 
-        public FilesApi(FilesService filesService) : base("files", new Version(0, 1))
+        public FilesApi(FilesService filesService, IConnectionStateManager connectionStateManager) : base("files", new Version(0, 1))
         {
             _logger = LogManager.GetCurrentClassLogger();
             _filesService = filesService;
+            _connectionStateManager = connectionStateManager;
         }
 
         #endregion
@@ -58,8 +60,12 @@ namespace Service.Api.Module
         {
             _logger.Debug(() => $"Upload {request.FileName}");
             
+            var login = _connectionStateManager.GetLoginByToken(request.Token);
+    
+            
             bool isValidRequest = _filesService.HandleUploadRequest(
-                request,
+                login,
+                request.FileName,
                 e.Request.InputStream,
                 e.Request.ContentLength64,
                 out UploadResponse response,
@@ -72,6 +78,7 @@ namespace Service.Api.Module
                 _logger.Warn(() => errorMessage);
             }
 
+            RaiseSendMessage($"Added from {login}: {request.FileName}");
             e.Response.SendChunked = true;
             using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
             {

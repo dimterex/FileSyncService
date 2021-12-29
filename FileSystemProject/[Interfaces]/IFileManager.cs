@@ -6,6 +6,7 @@ namespace FileSystemProject
     {
         IList<string> CompairFolders(IList<string> syncFiles, IList<string> fileActionFiles);
         IList<string> GetFiles(string folder);
-        void RemoveFiles(IList<string> toRemove);
+        void RemoveFile(string filePath);
+        IList<string> RemoveEmptyDirectories(IList<string> directories);
     }
 }

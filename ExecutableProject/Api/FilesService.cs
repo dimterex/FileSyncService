@@ -42,7 +42,8 @@ namespace Service.Api
 
        
         public bool HandleUploadRequest(
-            UploadRequest request,
+            string login,
+            string filePath,
             Stream stream,
             long contentLength,
             out UploadResponse response,
@@ -59,14 +60,14 @@ namespace Service.Api
                 return false;
             }
 
-            var fileInfo = new FileInfo(request.FileName);
+            var fileInfo = new FileInfo(filePath);
             if (!fileInfo.Directory.Exists)
             {
                 fileInfo.Directory.Create();
                 _logger.Info(() => $"Directory {fileInfo.Directory} created.");
             }
 
-            using (var fileStream = File.Create(request.FileName))
+            using (var fileStream = File.Create(filePath))
             {
                 stream.CopyTo(fileStream);
             }
@@ -76,8 +77,7 @@ namespace Service.Api
 
             errorStatusCode = HttpStatusCode.OK;
             
-            var login = _connectionStateManager.GetLoginByToken(request.Token);
-            _syncTableDataBase.AddState(login, request.FileName);
+            _syncTableDataBase.AddState(login, filePath);
             
             errorMessage = null;
 

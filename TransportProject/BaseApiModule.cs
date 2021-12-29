@@ -32,6 +32,12 @@ namespace TransportProject
 
         #endregion Properties
 
+        #region Events
+
+        public EventHandler<string> SendMessage;
+
+        #endregion Events
+
         #region Constructors
 
         protected BaseApiModule(string name, Version version)
@@ -138,6 +144,11 @@ namespace TransportProject
 
         protected virtual void OnInitialize()
         {
+        }
+
+        protected void RaiseSendMessage(string message)
+        {
+            SendMessage?.Invoke(this, message);
         }
 
         #endregion Methods

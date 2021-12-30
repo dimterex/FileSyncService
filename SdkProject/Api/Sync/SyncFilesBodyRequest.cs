@@ -7,11 +7,11 @@ namespace SdkProject.Api.Sync
     public class SyncFilesBodyRequest : IMessage
     {
         [JsonProperty(PropertyName = "files")]
-        public List<string> Files { get; set; }
+        public List<FileItem> Files { get; set; }
 
         public SyncFilesBodyRequest()
         {
-            Files = new List<string>();
+            Files = new List<FileItem>();
         }
     }
 }

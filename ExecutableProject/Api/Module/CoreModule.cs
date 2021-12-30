@@ -1,4 +1,5 @@
 ﻿using DataBaseProject;
+using ExecutableProject.Logic;
 using FileSystemProject;
 using SdkProject.Api.Connection;
 using SdkProject.Api.Sync;
@@ -21,6 +22,12 @@ namespace Service.Api.Module
         private readonly IUserTableDataBase _userTableDataBase;
         private readonly IConnectionStateManager _connectionStateManager;
         private readonly ILogger _logger;
+        
+        private readonly ServerRemoveFiles _serverRemoveFiles;
+        private readonly ClientRemoveFiles _clientRemoveFiles;
+        private readonly ServerAddFiles _serverAddFiles;
+        private readonly ClientAddFiles _clientAddFiles;
+        private readonly ClientUpdateFiles _clientUpdateFiles;
 
         public CoreModule(IFileManager fileManager,
             ISyncTableDataBase syncTableDataBase,
@@ -32,6 +39,12 @@ namespace Service.Api.Module
             _syncTableDataBase = syncTableDataBase;
             _connectionStateManager = connectionStateManager;
             _userTableDataBase = userTableDataBase;
+            
+            _serverRemoveFiles = new ServerRemoveFiles();
+            _clientRemoveFiles = new ClientRemoveFiles();
+            _serverAddFiles = new ServerAddFiles();
+            _clientAddFiles = new ClientAddFiles();
+            _clientUpdateFiles = new ClientUpdateFiles();
         }
 
         protected override void OnInitialize()
@@ -48,11 +61,19 @@ namespace Service.Api.Module
                 _connectionStateManager.Add(connectionRequest.Login, token.ToString());
                 var folders =  _userTableDataBase.GetAvailableFolders(connectionRequest.Login);
 
-                ApiController.SendResponse(e, new ConnectionResponse()
+                var response = new ConnectionResponse()
                 {
-                    Shared_folders = folders.ToArray(),
                     Token = token.ToString()
-                });
+                };
+
+                foreach (var folder in folders)
+                {
+                    var sharedFolder = new SharedFolder();
+                    sharedFolder.Files.AddRange(GetListOfPath(folder));
+                    response.Shared_folders.Add(sharedFolder);
+                }
+               
+                ApiController.SendResponse(e, response);
             }
             catch (Exception exception)
             {
@@ -64,82 +85,94 @@ namespace Service.Api.Module
         private void OnSyncFilesRequest(SyncFilesRequest fileAction, SyncFilesBodyRequest bodyRequest, HttpRequestEventArgs e)
         {
             var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
-            
-            var syncFiles = _syncTableDataBase.GetSyncStates(login);
-            var toRemoveInServer = _fileManager.CompairFolders(syncFiles, bodyRequest.Files);
-            _syncTableDataBase.RemoveSyncStates(login, toRemoveInServer);
-
-            var toDownloadInServer = _fileManager.CompairFolders(bodyRequest.Files, syncFiles);
-            
-            _logger.Trace($"To remove is server side: {string.Join(Environment.NewLine, toRemoveInServer)}");
-            
             var folders = _userTableDataBase.GetAvailableFolders(login);
-            
-            var notExistInServer = new List<string>();
-            var notExistInClient = new List<string>();
-            
+            var databaseFiles = _syncTableDataBase.GetSyncStates(login);
+
+            var serverFiles = new List<FileInfoModel>();
             foreach (var folder in folders)
             {
                 var rootFiles = _fileManager.GetFiles(folder);
-               
-                notExistInServer.AddRange(_fileManager.CompairFolders(bodyRequest.Files, rootFiles));
-                notExistInClient.AddRange(_fileManager.CompairFolders(rootFiles, bodyRequest.Files));
+                serverFiles.AddRange(rootFiles);
+            }
+
+            var deviceFiles = bodyRequest.Files.Select(Convert).ToList();
+
+            var resultServerRemoveFiles = _serverRemoveFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            _syncTableDataBase.RemoveSyncStates(login, resultServerRemoveFiles.Select(x => x.Path).ToList());
+            
+            foreach (var filePath in resultServerRemoveFiles.ToList())
+            {  
+                _fileManager.RemoveFile(filePath.Path);
+                RaiseSendMessage($"Remove {filePath.Path}");
             }
             
-            var needToAdd = notExistInClient.Where(x => !syncFiles.Contains(x)).ToList();
-            var needToRemove = notExistInServer.Where(x => syncFiles.Contains(x)).ToList();
-
-            foreach (var filePath in toRemoveInServer.ToList())
-            {  
-                _fileManager.RemoveFile(filePath);
-                RaiseSendMessage($"Remove {filePath}");
-            }
-
             var response = new SyncFilesResponse();
             
-            _logger.Trace($"To download to server side: {string.Join(Environment.NewLine, toDownloadInServer)}");
-            _logger.Trace($"To download to client side: {string.Join(Environment.NewLine, needToAdd)}");
-            _logger.Trace($"To remove in client side: {string.Join(Environment.NewLine, needToRemove)}");
+            var resultClientRemoveFiles = _clientRemoveFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            AddFilesRemoveResponse(resultClientRemoveFiles, response);
             
-            SendUploadRequest(toDownloadInServer, response);
-            SendFilesAddResponse(needToAdd, response);
-            SendFilesRemoveResponse(needToRemove, response);
-            
+            var resultServerAddFiles = _serverAddFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            AddUploadRequest(resultServerAddFiles, response);
+
+            var resultClientAddFiles = _clientAddFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            AddFilesAddResponse(resultClientAddFiles, response);
+
+            var resultClientUpdateFiles = _clientUpdateFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            AddUpdatedResponse(resultClientUpdateFiles, response);
+
             ApiController.SendResponse(e, response);
-            _syncTableDataBase.RemoveSyncStates(login, needToRemove);
         }
 
-        private void SendUploadRequest(IList<string> notExistInServer, SyncFilesResponse response)
+        private FileInfoModel Convert(FileItem fileItem)
         {
-            foreach (string baseFileInfo in notExistInServer)
+            return new FileInfoModel(Path.Combine(fileItem.Path), fileItem.Size);
+        }
+
+        private void AddUpdatedResponse(IList<FileInfoModel> fileInfoModels, SyncFilesResponse response)
+        {
+            foreach (FileInfoModel baseFileInfo in fileInfoModels)
+            {
+                var fileUpdatedResponse = new FileUpdatedResponse();
+                fileUpdatedResponse.FileName = GetListOfPath(baseFileInfo.Path);
+                fileUpdatedResponse.Size = baseFileInfo.Size;
+                response.UpdatedFiles.Add(fileUpdatedResponse);
+            }
+        }
+        
+        private void AddUploadRequest(IList<FileInfoModel> fileInfoModels, SyncFilesResponse response)
+        {
+            foreach (FileInfoModel baseFileInfo in fileInfoModels)
             {
                 var fileUploadRequest = new FileUploadRequest();
-                fileUploadRequest.FileName = baseFileInfo;
+                fileUploadRequest.FileName = GetListOfPath(baseFileInfo.Path);
                 response.UploadedFiles.Add(fileUploadRequest);
             }
         }
 
-        private void SendFilesAddResponse(IList<string> not_exist_in_client, SyncFilesResponse response)
+        private void AddFilesAddResponse(IList<FileInfoModel> fileInfoModels, SyncFilesResponse response)
         {
-            foreach (string baseFileInfo in not_exist_in_client)
+            foreach (FileInfoModel fileInfo in fileInfoModels)
             {
-                FileInfo fileInfo = new FileInfo(baseFileInfo);
-
-                var fileAddResponce = new FileAddResponse();
-                fileAddResponce.FileName = fileInfo.FullName;
-                fileAddResponce.Size = fileInfo.Length;
-                response.AddedFiles.Add(fileAddResponce);
+                var fileAddResponse = new FileAddResponse();
+                fileAddResponse.FileName = GetListOfPath(fileInfo.Path);
+                fileAddResponse.Size = fileInfo.Size;
+                response.AddedFiles.Add(fileAddResponse);
             }
         }
 
-        private void SendFilesRemoveResponse(IList<string> not_exist_in_server, SyncFilesResponse response)
+        private void AddFilesRemoveResponse(IList<FileInfoModel> fileInfoModels, SyncFilesResponse response)
         {
-            foreach (string baseFileInfo in not_exist_in_server)
+            foreach (FileInfoModel baseFileInfo in fileInfoModels)
             {
-                var fileRemoveResponce = new FileRemoveResponse();
-                fileRemoveResponce.FileName = baseFileInfo;
-                response.RemovedFiles.Add(fileRemoveResponce);
+                var fileRemoveResponse = new FileRemoveResponse();
+                fileRemoveResponse.FileName = GetListOfPath(baseFileInfo.Path);
+                response.RemovedFiles.Add(fileRemoveResponse);
             }
+        }
+
+        private string[] GetListOfPath(string path)
+        {
+            return path.Split(Path.DirectorySeparatorChar);
         }
     }
 }

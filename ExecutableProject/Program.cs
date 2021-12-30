@@ -23,7 +23,7 @@ namespace ExecutableProject
         static void Main(string[] args)
         {
             IConnectionStateManager connectionStateManager = new ConnectionStateManager();
-            IFileManager fileManager = new FileManager();
+            IFileManager fileManager = new FileManager(new FileSystemService());
             var apiController = new ApiController();
             var settingsManager = new SettingsManager();
             

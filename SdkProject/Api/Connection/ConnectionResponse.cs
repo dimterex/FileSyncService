@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace SdkProject.Api.Connection
 {
@@ -9,6 +10,11 @@ namespace SdkProject.Api.Connection
         public string Token { get; set; }
         
         [JsonProperty(PropertyName = "shared_folders")]
-        public string[] Shared_folders { get; set; }
+        public List<SharedFolder> Shared_folders { get; set; }
+
+        public ConnectionResponse()
+        {
+            Shared_folders = new List<SharedFolder>();
+        }
     }
 }

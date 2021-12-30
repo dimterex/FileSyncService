@@ -14,12 +14,16 @@ namespace SdkProject.Api.Sync
         
         [JsonProperty(PropertyName = "uploaded_files")]
         public List<FileUploadRequest> UploadedFiles { get; set; }
+        
+        [JsonProperty(PropertyName = "updated_files")]
+        public List<FileUpdatedResponse> UpdatedFiles { get; set; }
 
         public SyncFilesResponse()
         {
             AddedFiles = new List<FileAddResponse>();
             RemovedFiles = new List<FileRemoveResponse>();
             UploadedFiles = new List<FileUploadRequest>();
+            UpdatedFiles = new List<FileUpdatedResponse>();
         }
     }
 }

@@ -7,19 +7,42 @@ namespace FileSystemProject
 {
     public class FileManager : IFileManager
     {
+        private readonly IFileSystemService _fileSystemService;
         private readonly ILogger _logger;
 
-        public FileManager()
+        public FileManager(IFileSystemService fileSystemService)
         {
+            _fileSystemService = fileSystemService;
             _logger = LogManager.GetCurrentClassLogger();
         }
-            
-        public IList<string> GetFiles(string folderPath)
+
+        public IList<FileInfoModel> GetFiles(string folderPath)
         {
             var ls = GetFileDatas(folderPath);
 
-            var result = ls.OrderBy(info => info.LastWriteTime).Select(info => info.FullName).ToList();
-            
+            var result = ls.OrderBy(info => info.LastWriteTime)
+                .Select(info => new FileInfoModel(info.FullName, info.Length)).ToList();
+
+            return result;
+        }
+
+        public void RemoveFile(string filePath)
+        {
+            _logger.Debug(() => $"Remove {filePath}");
+            _fileSystemService.RemoveFile(filePath);
+        }
+
+        public IList<string> RemoveEmptyDirectories(IList<string> directories)
+        {
+            var result = new List<string>();
+
+            foreach (var directory in directories)
+            {
+                if (string.IsNullOrWhiteSpace(directory))
+                    continue;
+                processDirectory(directory, result);
+            }
+
             return result;
         }
 
@@ -30,16 +53,16 @@ namespace FileSystemProject
             if (string.IsNullOrEmpty(folderPath))
                 return ls;
 
-            var folders = Directory.GetDirectories(folderPath);
-            var files = Directory.GetFiles(folderPath).ToList();
+            var directories = _fileSystemService.GetDirectories(folderPath);
+            var files = _fileSystemService.GetFiles(folderPath);
 
-            foreach (string file in files)
+            foreach (var file in files)
             {
-                FileInfo fileInfo = new FileInfo(file);
+                var fileInfo = new FileInfo(file);
                 ls.Add(fileInfo);
             }
 
-            foreach (var folder in folders)
+            foreach (var folder in directories)
             {
                 ls.AddRange(GetFileDatas(folder));
             }
@@ -47,40 +70,6 @@ namespace FileSystemProject
             return ls;
         }
 
-        public IList<string> CompairFolders(IList<string> sourceFiles, IList<string> targetFiles)
-        {
-            var result = new List<string>();
-            
-            foreach (var sourceFile in sourceFiles)
-            {
-                if (targetFiles.All(x => sourceFile != x))
-                    result.Add(sourceFile);
-            }
-
-            return result;
-        }
-
-        public void RemoveFile(string filePath)
-        {
-            _logger.Debug(() => $"Remove {filePath}");
-            if (File.Exists(filePath))
-                File.Delete(filePath);
-        }
-
-        public IList<string> RemoveEmptyDirectories(IList<string> directories)
-        {
-            var result = new List<string>();
-            
-            foreach (var directory in directories)
-            {
-                if (string.IsNullOrWhiteSpace(directory))
-                    continue;
-                processDirectory(directory, result);
-            }
-
-            return result;
-        }
-        
         private void processDirectory(string startLocation, IList<string> directories)
         {
             foreach (var directory in Directory.GetDirectories(startLocation))
@@ -88,11 +77,12 @@ namespace FileSystemProject
                 processDirectory(directory, directories);
                 if (Directory.GetFiles(directory).Length != 0)
                     continue;
-                        
+
                 if (Directory.GetDirectories(directory).Length != 0)
                     continue;
-                        
-                Directory.Delete(directory, false);
+
+                _fileSystemService.RemoveDirectory(directory);
+
                 directories.Add(directory);
             }
         }

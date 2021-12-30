@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransportProject", "Transpo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramBotProject", "TelegramBotProject\TelegramBotProject.csproj", "{AC320A79-F40C-472A-B5E2-FB152F4CBA87}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject", "TestProject\TestProject.csproj", "{BFD03987-A222-49F9-890A-4A0DF271E967}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{AC320A79-F40C-472A-B5E2-FB152F4CBA87}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC320A79-F40C-472A-B5E2-FB152F4CBA87}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC320A79-F40C-472A-B5E2-FB152F4CBA87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFD03987-A222-49F9-890A-4A0DF271E967}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFD03987-A222-49F9-890A-4A0DF271E967}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFD03987-A222-49F9-890A-4A0DF271E967}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFD03987-A222-49F9-890A-4A0DF271E967}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

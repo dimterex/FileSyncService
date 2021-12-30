@@ -35,13 +35,7 @@ namespace DataBaseProject
             {
                 using (var dataBase = _dataBaseFactory.Create())
                 {
-                    var state = new SyncState()
-                    {
-                        Login = login,
-                        FilePath = filePath
-                    };
-                    
-                    dataBase.SyncStates.Add(state);
+                    AddSyncState(login, filePath, dataBase);
                     dataBase.ApplyChanges();
                 }
             });
@@ -61,7 +55,6 @@ namespace DataBaseProject
                     dataBase.ApplyChanges();
                 }
             });
-
         }
 
         public void RemoveSyncStatesByAvailableFolder(string login, string availableFolderPath)
@@ -81,7 +74,7 @@ namespace DataBaseProject
             });
         }
 
-        public void AddStates(string login, string[] filesPath)
+        public void AddStates(string login, IList<string> filesPath)
         {
             Task.Run(() =>
             {
@@ -89,17 +82,28 @@ namespace DataBaseProject
                 {
                     foreach (var filePath in filesPath)
                     {
-                        var state = new SyncState()
-                        {
-                            Login = login,
-                            FilePath = filePath
-                        };
-                        dataBase.SyncStates.Add(state);
+                        AddSyncState(login, filePath, dataBase);
                     }
                     
                     dataBase.ApplyChanges();
                 }
             });
+        }
+        
+        private void AddSyncState(string login, string filePath, IDataBaseContext dataBase)
+        {
+            var syncStates = dataBase.SyncStates.ToList().Where(x => x.Login == login && x.FilePath == filePath).ToList();
+
+            if (syncStates.Any())
+                return;
+
+            var state = new SyncState()
+            {
+                Login = login,
+                FilePath = filePath
+            };
+
+            dataBase.SyncStates.Add(state);
         }
     }
 }

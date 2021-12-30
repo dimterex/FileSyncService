@@ -60,6 +60,11 @@ namespace TransportProject
             }
         }
 
+        public void SetErrorResponse(HttpRequestEventArgs e)
+        {
+            e.Response.StatusCode = (int)HttpStatusCode.NotFound;
+        }
+
 
           public void RegisterRequest(string resource, BaseApiModule module)
           {

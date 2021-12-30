@@ -29,6 +29,7 @@ namespace Service.Api.Module
         private readonly ServerAddFiles _serverAddFiles;
         private readonly ClientAddFiles _clientAddFiles;
         private readonly ClientUpdateFiles _clientUpdateFiles;
+        private readonly ClientServerExistFiles _clientServerExistFiles;
 
         public CoreModule(IFileManager fileManager,
             ISyncTableDataBase syncTableDataBase,
@@ -46,6 +47,7 @@ namespace Service.Api.Module
             _serverAddFiles = new ServerAddFiles();
             _clientAddFiles = new ClientAddFiles();
             _clientUpdateFiles = new ClientUpdateFiles();
+            _clientServerExistFiles = new ClientServerExistFiles();
         }
 
         protected override void OnInitialize()
@@ -86,6 +88,12 @@ namespace Service.Api.Module
         private void OnSyncFilesRequest(SyncFilesRequest fileAction, SyncFilesBodyRequest bodyRequest, HttpRequestEventArgs e)
         {
             var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
+            if (string.IsNullOrEmpty(login))
+            {
+                ApiController.SetErrorResponse(e);
+                return;
+            }
+            
             var folders = _userTableDataBase.GetAvailableFolders(login);
             var databaseFiles = _syncTableDataBase.GetSyncStates(login);
 
@@ -99,13 +107,7 @@ namespace Service.Api.Module
             var deviceFiles = bodyRequest.Files.Select(Convert).ToList();
 
             var resultServerRemoveFiles = _serverRemoveFiles.Get(databaseFiles, deviceFiles, serverFiles);
-            _syncTableDataBase.RemoveSyncStates(login, resultServerRemoveFiles.Select(x => x.Path).ToList());
-            
-            foreach (var filePath in resultServerRemoveFiles.ToList())
-            {  
-                _fileManager.RemoveFile(filePath.Path);
-                RaiseSendMessage($"Remove {filePath.Path}");
-            }
+           
             
             var response = new SyncFilesResponse();
             
@@ -120,7 +122,17 @@ namespace Service.Api.Module
 
             var resultClientUpdateFiles = _clientUpdateFiles.Get(databaseFiles, deviceFiles, serverFiles);
             AddUpdatedResponse(resultClientUpdateFiles, response);
-
+            
+            var clientServerExistFiles = _clientServerExistFiles.Get(databaseFiles, deviceFiles, serverFiles);
+            _syncTableDataBase.AddStates(login, clientServerExistFiles.Select(x => x.Path).ToArray());
+            _syncTableDataBase.RemoveSyncStates(login, resultServerRemoveFiles.Select(x => x.Path).ToList());
+            
+            foreach (var filePath in resultServerRemoveFiles.ToList())
+            {  
+                _fileManager.RemoveFile(filePath.Path);
+                RaiseSendMessage($"Remove {filePath.Path}");
+            }
+            
             ApiController.SendResponse(e, response);
         }
 

@@ -12,16 +12,14 @@ namespace ExecutableProject.Logic
 
             foreach (var fileFromDataBase in filesFromDataBase)
             {
-                foreach (var fileFromDevice in filesFromDevice)
+                var deviceFile = filesFromDevice.FirstOrDefault(x => x.Path == fileFromDataBase);
+                if (deviceFile == null)
+                    continue;
+                
+                var serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDataBase);
+                if (serverPath == null)
                 {
-                    if (fileFromDevice.Path != fileFromDataBase)
-                        continue;
-                    
-                    var devicePath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDataBase);
-                    if (devicePath == null)
-                    {
-                        result.Add(fileFromDevice);
-                    }
+                    result.Add(deviceFile);
                 }
             }
 

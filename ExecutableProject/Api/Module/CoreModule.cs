@@ -1,4 +1,5 @@
-﻿using DataBaseProject;
+﻿using System.Text;
+using DataBaseProject;
 using ExecutableProject.Logic;
 using FileSystemProject;
 using SdkProject.Api.Connection;
@@ -125,7 +126,14 @@ namespace Service.Api.Module
 
         private FileInfoModel Convert(FileItem fileItem)
         {
-            return new FileInfoModel(Path.Combine(fileItem.Path), fileItem.Size);
+            var sb = new StringBuilder();
+            foreach (var path in fileItem.Path)
+            {
+                sb.Append($"{path}{Path.DirectorySeparatorChar}");
+            }
+
+            var rawPath = sb.ToString();
+            return new FileInfoModel(rawPath.Substring(0, rawPath.Length - 1), fileItem.Size);
         }
 
         private void AddUpdatedResponse(IList<FileInfoModel> fileInfoModels, SyncFilesResponse response)

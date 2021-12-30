@@ -37,10 +37,13 @@ namespace TransportProject
 
                 if (string.IsNullOrEmpty(resource) || !_requestToModule.TryGetValue(resource, out BaseApiModule service))
                 {
+                    _logger.Warn(() => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
                     e.Response.StatusCode = (int)HttpStatusCode.NotFound;
                     return;
                 }
                 
+                _logger.Info(() => $"Can route '{e.Request.RawUrl}' request to appropriate handler.");
+          
                 service.Handle(resource.Substring(resource.IndexOf('/', 1) + 1), e);
             }
             catch (Exception ex)

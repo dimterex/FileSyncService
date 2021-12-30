@@ -8,5 +8,6 @@ namespace DataBaseProject
         void AddState(string login, string filePath);
         void RemoveSyncStates(string login, IList<string> paths);
         void RemoveSyncStatesByAvailableFolder(string login, string availableFolderPath);
+        void AddStates(string login, string[] filesPath);
     }
 }

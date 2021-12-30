@@ -92,7 +92,7 @@ namespace FileSystemProject
                 if (Directory.GetDirectories(directory).Length != 0)
                     continue;
                         
-                // Directory.Delete(directory, false);
+                Directory.Delete(directory, false);
                 directories.Add(directory);
             }
         }

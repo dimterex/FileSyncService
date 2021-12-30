@@ -71,6 +71,8 @@ namespace Service.Api.Module
 
             var toDownloadInServer = _fileManager.CompairFolders(bodyRequest.Files, syncFiles);
             
+            _logger.Trace($"To remove is server side: {string.Join(Environment.NewLine, toRemoveInServer)}");
+            
             var folders = _userTableDataBase.GetAvailableFolders(login);
             
             var notExistInServer = new List<string>();
@@ -94,6 +96,10 @@ namespace Service.Api.Module
             }
 
             var response = new SyncFilesResponse();
+            
+            _logger.Trace($"To download to server side: {string.Join(Environment.NewLine, toDownloadInServer)}");
+            _logger.Trace($"To download to client side: {string.Join(Environment.NewLine, needToAdd)}");
+            _logger.Trace($"To remove in client side: {string.Join(Environment.NewLine, needToRemove)}");
             
             SendUploadRequest(toDownloadInServer, response);
             SendFilesAddResponse(needToAdd, response);

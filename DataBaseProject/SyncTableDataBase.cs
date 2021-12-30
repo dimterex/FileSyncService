@@ -80,5 +80,26 @@ namespace DataBaseProject
                 }
             });
         }
+
+        public void AddStates(string login, string[] filesPath)
+        {
+            Task.Run(() =>
+            {
+                using (var dataBase = _dataBaseFactory.Create())
+                {
+                    foreach (var filePath in filesPath)
+                    {
+                        var state = new SyncState()
+                        {
+                            Login = login,
+                            FilePath = filePath
+                        };
+                        dataBase.SyncStates.Add(state);
+                    }
+                    
+                    dataBase.ApplyChanges();
+                }
+            });
+        }
     }
 }

@@ -27,10 +27,7 @@ namespace Service.Api.Module
 
         private void OnCreateSyncStateRequest(SyncFilesRequest syncFilesRequest, CreateSyncStateRequest request, HttpRequestEventArgs arg3)
         {
-            foreach (var file in request.SyncFiles)
-            {
-                _syncTableDataBase.AddState(request.Login, file);
-            }
+            _syncTableDataBase.AddStates(request.Login, request.SyncFiles);
         }
 
         private void OnCreateUserRequest(SyncFilesRequest syncFilesRequest, CreateUserRequest request, HttpRequestEventArgs arg3)

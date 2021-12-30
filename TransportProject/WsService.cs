@@ -253,6 +253,8 @@ namespace TransportProject
 
         private void HandleRequest(object sender, HttpRequestEventArgs e)
         {
+            _logger.Info(() => $"Handle request '{e.Request.RawUrl}'.");
+            
             if (e.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
             {
                 e.Response.Headers.Add("Access-Control-Allow-Origin: *");
@@ -279,7 +281,6 @@ namespace TransportProject
                 _logger.Warn(() => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
             }
         }
-        
        
 
         #endregion Methods

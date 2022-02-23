@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ExecutableProject.Logic;
 using FileSystemProject;
 using NUnit.Framework;
+using PublicProject.Logic;
 
 namespace TestProject.ExecutableProjectTests
 {

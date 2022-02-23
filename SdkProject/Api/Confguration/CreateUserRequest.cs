@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
+using SdkProject._Attribute_;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Confguration
 {
-    [ApiMessage("CreateUserRequest")]
-    public class CreateUserRequest : IMessage
+    [SdkApiMessage("CreateUserRequest")]
+    public class CreateUserRequest : ISdkMessage
     {
         [JsonProperty(PropertyName = "login")]
         public string Login { get; set; }

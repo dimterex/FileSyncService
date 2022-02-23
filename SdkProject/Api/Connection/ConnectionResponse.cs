@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using SdkProject._Attribute_;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Connection
 {
-    [ApiMessage("ConnectionResponse")]
-    public class ConnectionResponse : IMessage
+    [SdkApiMessage("ConnectionResponse")]
+    public class ConnectionResponse : ISdkMessage
     {
         [JsonProperty(PropertyName = "token")]
         public string Token { get; set; }

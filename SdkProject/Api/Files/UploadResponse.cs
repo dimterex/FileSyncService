@@ -1,10 +1,11 @@
 ﻿using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Files
 {
-    public class UploadResponse : IMessage
+    public class UploadResponse : ISdkMessage
     {
         [JsonProperty(PropertyName = "result")]
         [JsonConverter(typeof (StringEnumConverter))]

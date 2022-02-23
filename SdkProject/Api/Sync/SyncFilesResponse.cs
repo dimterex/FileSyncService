@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using SdkProject._Attribute_;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Sync
 {
-    [ApiMessage("SyncFilesResponse")]
-    public class SyncFilesResponse : IMessage
+    [SdkApiMessage("SyncFilesResponse")]
+    public class SyncFilesResponse : ISdkMessage
     {
         [JsonProperty(PropertyName = "added_files")]
         public List<FileAddResponse> AddedFiles { get; set; }

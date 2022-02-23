@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Core.Customer\Core.Customer.csproj" />
+      <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj" />
+      <ProjectReference Include="..\ServicesApi\ServicesApi.csproj" />
+    </ItemGroup>
+
+</Project>

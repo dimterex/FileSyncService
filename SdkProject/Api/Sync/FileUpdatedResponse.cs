@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
+using SdkProject._Attribute_;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Sync
 {
-    [ApiMessage("FileUpdatedResponse")]
-    public class FileUpdatedResponse : IMessage
+    [SdkApiMessage("FileUpdatedResponse")]
+    public class FileUpdatedResponse : ISdkMessage
     {
         [JsonProperty(PropertyName = "file_name")]
         public string[] FileName { get; set; }

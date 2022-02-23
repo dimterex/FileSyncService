@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
+using SdkProject._Attribute_;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Sync
 {
-    [ApiMessage("FileAddResponse")]
-    public class FileAddResponse : IMessage
+    [SdkApiMessage("FileAddResponse")]
+    public class FileAddResponse : ISdkMessage
     {
 
         [JsonProperty(PropertyName = "size")]

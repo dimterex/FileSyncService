@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
+using SdkProject._Interfaces_;
 
 namespace SdkProject.Api.Sync
 {
 
-    public class SyncFilesRequest : IMessage
+    public class SyncFilesRequest : ISdkMessage
     {
         [JsonProperty(PropertyName = "token")]
         public string Token { get; set; }

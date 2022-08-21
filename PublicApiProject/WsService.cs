@@ -52,7 +52,6 @@ namespace PublicProject
         private int _httpsPort;
 
         private HttpServer _wsServer;
-        private HttpListener listener;
 
         private HttpServer _wssServer;
 

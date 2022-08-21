@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using Core.Logger;
 using Core.Logger._Enums_;
 using Core.Logger._Interfaces_;
 using Newtonsoft.Json;
 using PublicProject.Modules;
 using SdkProject;
 using SdkProject._Interfaces_;
-using ServicesApi;
 
 namespace PublicProject
 {
@@ -19,8 +17,6 @@ namespace PublicProject
         public const string API_RESOURCE_PATH = "/api";
         private const string TAG = nameof(ApiController);
         private readonly ILoggerService _loggerService;
-
-        private readonly RabbitMqPacketSerializer _package;
 
         private readonly Dictionary<string, BaseApiModule> _requestToModule;
         private readonly SdkPacketSerializer _sdkPacketSerializer;

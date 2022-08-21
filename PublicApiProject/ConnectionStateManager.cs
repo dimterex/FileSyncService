@@ -5,9 +5,9 @@ namespace PublicProject
 {
     public class ConnectionStateManager : IConnectionStateManager
     {
-        private readonly ConcurrentDictionary<string, string> _tokenToLoginMap;
         private readonly ConcurrentDictionary<string, string> _loginToTokenMap;
-        
+        private readonly ConcurrentDictionary<string, string> _tokenToLoginMap;
+
         public ConnectionStateManager()
         {
             _tokenToLoginMap = new ConcurrentDictionary<string, string>();

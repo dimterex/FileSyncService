@@ -1,55 +1,84 @@
 ﻿using System;
-using Core.Customer;
-using Core.Publisher;
+using Common.DatabaseProject;
+using Common.DatabaseProject._Interfaces_;
+using Core.Daemon;
+using Core.Logger;
+using Core.Logger._Interfaces_;
 using FileSystemProject;
+using Microsoft.Extensions.DependencyInjection;
 using PublicProject;
 using PublicProject._Interfaces_;
-using PublicProject.Actions;
+using PublicProject._Interfaces_.Factories;
+using PublicProject.Database.Actions.States;
+using PublicProject.Database.Actions.Users;
+using PublicProject.Factories;
+using PublicProject.Logic;
+using PublicProject.Logic.Comparing;
 using PublicProject.Modules;
-using ServicesApi;
 
 namespace PublicApiProject
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        public const string TAG = nameof(PublicApiProject);
+        public const string RABBIT_HOST = "RABBIT_HOST";
+        private const string DB_PATH = "DB_PATH";
+
+        private const int HTTP_PORT = 1234;
+        private const int HTTPS_PORT = 1235;
+
+        private static void Main(string[] args)
         {
-            
-            var publisherController = new PublisherController("dimterex.duckdns.org", "user", "1234");
+            var daemon = new Daemon();
 
-            IConnectionStateManager connectionStateManager = new ConnectionStateManager();
-            var fileservice = new FileSystemService();
-            var apiController = new ApiController();
+            daemon.Run(() =>
+            {
+                var services = new ServiceCollection();
+                services.AddSingleton<ILoggerService, LoggerService>();
+                services.AddSingleton<IConnectionStateManager, ConnectionStateManager>();
+                services.AddSingleton<IFileSystemService, FileSystemService>();
+                services.AddSingleton<IFileManager, FileManager>();
+                services.AddSingleton<ISyncStateFilesResponseFactory, SyncStateFilesResponseFactory>();
+                services.AddSingleton<ISyncStateFilesResponseTaskFactory, SyncStateFilesResponseTaskFactory>();
+                services.AddSingleton<IConnectionRequestTaskFactory, ConnectionRequestTaskFactory>();
+                services.AddSingleton<ISyncStateFilesResponseService, SyncStateFilesResponseService>();
+                services.AddSingleton<IRootService, RootService>();
 
-            var fileManager = new FileManager(fileservice);
-            var syncModule = new CoreModule(fileManager, connectionStateManager, publisherController);
-            syncModule.Initialize(apiController);
-            
-            var attachModule = new FilesModule(connectionStateManager, publisherController);
-            attachModule.Initialize(apiController);
+                var dbPath = Environment.GetEnvironmentVariable(DB_PATH);
+                services.AddSingleton<IDataBaseFactory>(new DataBaseFactory(dbPath));
 
-            var configModule = new ConfigurationModule(publisherController);
-            configModule.Initialize(apiController);
-            
-            var customerController = new CustomerController("dimterex.duckdns.org", "user", "1234", QueueConstants.FILE_STORAGE_QUEUE);
-           
-            // States
-            customerController.Configure(new ClearEmptyDirectoriesAction(publisherController, fileManager));
-                
-            var port = 1234;
-            var ports = 1235;
-            var ws = new WsService(apiController,  port, ports);
-            ws.Start();
-            
-            // var services = new ServiceCollection();
-            // services.AddSingleton<IUserService, UserSerice>();
-            // services.AddSingleton<UserApplication>();
-            // var serviceProvider = services.BuildServiceProvider();
-            // var userAppService = serviceProvider.GetService<UserApplication>();
+                services.AddSingleton<ApiController>();
+                services.AddSingleton<AvailableFoldersForUserRequestExecutor>();
+                services.AddSingleton<SyncStatesRequestExecutor>();
+                services.AddSingleton<AddNewStatesExecutor>();
+                services.AddSingleton<RemoveSyncStatesExecutor>();
+                services.AddSingleton<RemoveSyncStatesByAvailableFolderExecutor>();
+                services.AddSingleton<AddNewStateExecutor>();
+                services.AddSingleton<AddNewUserInfoExecutor>();
+                services.AddSingleton<RemoveUserInfoExecutor>();
 
-            Console.ReadLine();
-            
-            ws.Stop();
+                services.AddSingleton<WsService>();
+
+                services.AddSingleton<CoreModule>();
+                services.AddSingleton<FilesModule>();
+                services.AddSingleton<ConfigurationModule>();
+
+
+                services.AddSingleton<IFilesComparing, ClientAddFiles>();
+                services.AddSingleton<IFilesComparing, ClientRemoveFiles>();
+                services.AddSingleton<IFilesComparing, ClientServerExistFiles>();
+                services.AddSingleton<IFilesComparing, ClientUpdateFiles>();
+                services.AddSingleton<IFilesComparing, ServerAddFiles>();
+                services.AddSingleton<IFilesComparing, ServerRemoveFiles>();
+
+                var serviceProvider = services.BuildServiceProvider();
+                var rootService = serviceProvider.GetService<IRootService>();
+                serviceProvider.GetService<CoreModule>();
+                serviceProvider.GetService<FilesModule>();
+                serviceProvider.GetService<ConfigurationModule>();
+
+                rootService.Start(HTTP_PORT, HTTPS_PORT);
+            });
         }
     }
 }

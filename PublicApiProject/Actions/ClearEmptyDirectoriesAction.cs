@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Core.Publisher;
+using Core.Publisher._Interfaces_;
 using FileSystemProject;
 using ServicesApi.Common._Interfaces_;
 using ServicesApi.FileStorage;
@@ -10,10 +11,10 @@ namespace PublicProject.Actions
 {
     public class ClearEmptyDirectoriesAction : IMessageHandler<ClearEmptyDirectories>
     {
-        private readonly PublisherController _publisherController;
         private readonly IFileManager _fileManager;
+        private readonly IPublisherService _publisherController;
 
-        public ClearEmptyDirectoriesAction(PublisherController publisherController, IFileManager fileManager)
+        public ClearEmptyDirectoriesAction(IPublisherService publisherController, IFileManager fileManager)
         {
             _publisherController = publisherController;
             _fileManager = fileManager;
@@ -25,8 +26,8 @@ namespace PublicProject.Actions
             var sb = new StringBuilder();
             sb.AppendLine("Removed dictionaries:");
             sb.AppendJoin(Environment.NewLine, removedList);
-            
-            _publisherController.Send(new TelegramMessage()
+
+            _publisherController.SendMessage(new TelegramMessage
             {
                 Message = sb.ToString()
             });

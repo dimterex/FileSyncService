@@ -3,58 +3,58 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using Core.Logger;
+using Core.Logger._Enums_;
+using Core.Logger._Interfaces_;
 using Newtonsoft.Json;
-using NLog;
+using PublicProject.Modules;
 using SdkProject;
 using SdkProject._Interfaces_;
-using SdkProject.Api;
 using ServicesApi;
-using ServicesApi.Common;
-using ServicesApi.Common._Interfaces_;
-using WebSocketSharp.Server;
 
 namespace PublicProject
 {
     public class ApiController
     {
         public const string API_RESOURCE_PATH = "/api";
-        
-        private readonly RabbitMqPacketSerializer _package;
-        private static ILogger _logger;
+        private const string TAG = nameof(ApiController);
+        private readonly ILoggerService _loggerService;
 
-        
+        private readonly RabbitMqPacketSerializer _package;
+
         private readonly Dictionary<string, BaseApiModule> _requestToModule;
         private readonly SdkPacketSerializer _sdkPacketSerializer;
 
 
-        public ApiController()
+        public ApiController(ILoggerService loggerService)
         {
+            _loggerService = loggerService;
             _requestToModule = new Dictionary<string, BaseApiModule>();
             _sdkPacketSerializer = new SdkPacketSerializer();
-            _logger = LogManager.GetCurrentClassLogger();
         }
-        
-        public void HandleRequest(string resource, HttpRequestEventArgs e)
+
+        public void HandleRequest(string resource, HttpRequestEventModel e)
         {
             try
             {
-                string token = e.Request.QueryString["token"];
+                var token = e.Request.QueryString["token"];
 
-
-                if (string.IsNullOrEmpty(resource) || !_requestToModule.TryGetValue(resource, out BaseApiModule service))
+                if (string.IsNullOrEmpty(resource) || !_requestToModule.TryGetValue(resource, out var service))
                 {
-                    _logger.Warn(() => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
+                    _loggerService.SendLog(LogLevel.Warning, TAG,
+                        () => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
                     e.Response.StatusCode = (int)HttpStatusCode.NotFound;
                     return;
                 }
-                
-                _logger.Info(() => $"Can route '{e.Request.RawUrl}' request to appropriate handler.");
-          
+
+                _loggerService.SendLog(LogLevel.Info, TAG,
+                    () => $"Can route '{e.Request.RawUrl}' request to appropriate handler.");
+
                 service.Handle(resource.Substring(resource.IndexOf('/', 1) + 1), e);
             }
             catch (Exception ex)
             {
-                _logger.Error(() => $"Handle Request Error {ex.Message}");
+                _loggerService.SendLog(LogLevel.Error, TAG, () => $"Handle Request Error {ex.Message}");
 
                 try
                 {
@@ -66,41 +66,40 @@ namespace PublicProject
             }
         }
 
-        public void SetErrorResponse(HttpRequestEventArgs e)
+        public void SetErrorResponse(HttpRequestEventModel e)
         {
             e.Response.StatusCode = (int)HttpStatusCode.NotFound;
         }
 
+        public void RegisterRequest(string resource, BaseApiModule module)
+        {
+            // Стандартная регистрация ресурса с использованием версии модуля:
+            _requestToModule.Add($"/{module.Name}/{module.Version.Major}/{resource}", module);
+        }
 
-          public void RegisterRequest(string resource, BaseApiModule module)
-          {
-              // Стандартная регистрация ресурса с использованием версии модуля:
-              _requestToModule.Add($"/{module.Name}/{module.Version.Major}/{resource}", module);
-          }
-          
-         
-          
-          public void SendResponse(HttpRequestEventArgs e, ISdkMessage response)
-          {
-              e.Response.SendChunked = true;
-            
-              SdkMessageContainer rabbitMqMessageContainer = _sdkPacketSerializer.Serialize(response);
-            
-              using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
-              {
-                  var serializer = JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-                  var jsonWriter = new JsonTextWriter(streamWriter);
+        public void SendResponse(HttpRequestEventModel e, ISdkMessage response)
+        {
+            e.Response.SendChunked = true;
 
-                  try
-                  {
-                      _logger.Debug(() => $"Send response: {rabbitMqMessageContainer.Identifier}");
-                      serializer.Serialize(jsonWriter, new [] { rabbitMqMessageContainer });
-                  }
-                  finally
-                  {
-                      jsonWriter.Close();
-                  }
-              }
-          }
+            var rabbitMqMessageContainer = _sdkPacketSerializer.Serialize(response);
+
+            using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
+            {
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                    { NullValueHandling = NullValueHandling.Ignore });
+                var jsonWriter = new JsonTextWriter(streamWriter);
+
+                try
+                {
+                    _loggerService.SendLog(LogLevel.Debug, TAG,
+                        () => $"Send response: {rabbitMqMessageContainer.Identifier}");
+                    serializer.Serialize(jsonWriter, new[] { rabbitMqMessageContainer });
+                }
+                finally
+                {
+                    jsonWriter.Close();
+                }
+            }
+        }
     }
 }

@@ -5,11 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ServicesApi\ServicesApi.csproj" />
+        <ProjectReference Include="..\Common.ServicesApi\Common.ServicesApi.csproj"/>
+        <ProjectReference Include="..\Core.Logger\Core.Logger.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+        <PackageReference Include="RabbitMQ.Client" Version="6.2.2"/>
     </ItemGroup>
 
 </Project>

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NLog;
+using Core.Logger;
+using Core.Logger._Enums_;
+using Core.Logger._Interfaces_;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
@@ -12,37 +14,42 @@ namespace TelegramBotService
 {
     public class TelegramService : ITelegramService
     {
-        private readonly int _telegramId;
-        private readonly ITelegramBotClient _telegramBotClient;
+        private const string TAG = nameof(TelegramService);
         private readonly ActionsService _actionsService;
-        private readonly ILogger _logger;
+        private readonly ILoggerService _loggerService;
+        private readonly ITelegramBotClient _telegramBotClient;
 
-        public TelegramService(string botToken, int telegram_id)
+        private readonly int _telegramId;
+
+        public TelegramService(string botToken, int telegram_id, ILoggerService loggerService)
         {
-            _logger = LogManager.GetCurrentClassLogger();
-            
             _telegramId = telegram_id;
+            _loggerService = loggerService;
             _telegramBotClient = new TelegramBotClient(botToken);
 
-            _actionsService = new ActionsService();
+            _actionsService = new ActionsService(_loggerService);
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
-            ReceiverOptions receiverOptions = new() { AllowedUpdates = { } };
-            
+            ReceiverOptions receiverOptions = new();
+
             using var cts = new CancellationTokenSource();
             {
                 _telegramBotClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, receiverOptions, cts.Token);
             }
         }
 
-        private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        public Task SendTextMessageAsync(string message)
         {
-            await Task.Run(() =>
-            {
-                _actionsService.HandleUpdateAsync(botClient, update);
-            }, cancellationToken);
+            return _telegramBotClient.SendTextMessageAsync(_telegramId, message);
         }
-        
-        private async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+
+        private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update,
+            CancellationToken cancellationToken)
+        {
+            await Task.Run(() => { _actionsService.HandleUpdateAsync(botClient, update); }, cancellationToken);
+        }
+
+        private async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception,
+            CancellationToken cancellationToken)
         {
             await Task.Run(() =>
             {
@@ -53,13 +60,8 @@ namespace TelegramBotService
                     _ => exception.ToString()
                 };
 
-                _logger.Error(() => errorMessage);
+                _loggerService.SendLog(LogLevel.Error, TAG, () => errorMessage);
             }, cancellationToken);
-        }
-
-        public Task SendTextMessageAsync(string message)
-        {
-            return _telegramBotClient.SendTextMessageAsync(_telegramId, message);
         }
 
         public void Configure(string message, string comment, ITelegramCommand action)

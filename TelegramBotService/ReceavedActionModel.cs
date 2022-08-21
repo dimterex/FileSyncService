@@ -13,7 +13,7 @@ namespace TelegramBotService
         }
 
         public string Comment { get; }
-        
-        public  Action<ITelegramBotClient, Message> Action { get; }
+
+        public Action<ITelegramBotClient, Message> Action { get; }
     }
 }

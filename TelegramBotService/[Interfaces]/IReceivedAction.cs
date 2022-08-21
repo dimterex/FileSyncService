@@ -1,5 +1,4 @@
-﻿using System;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TelegramBotService._Interfaces_

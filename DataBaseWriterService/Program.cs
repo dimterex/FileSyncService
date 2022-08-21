@@ -1,38 +1,51 @@
 ﻿using System;
 using Core.Customer;
+using Core.Daemon;
 using Core.Publisher;
-using DataBaseWriterService.Actions.States;
-using DataBaseWriterService.Actions.Users;
+using NLog;
 using ServicesApi;
 
 namespace DataBaseWriterService
 {
     static class Program
     {
+        private const string RABBIT_HOST = "RABBIT_HOST";
+        private const string DB_PATH = "DB_PATH";
+        
         static void Main(string[] args)
         {
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Info(() => $"Starting...");
             
-            var customerController = new CustomerController("dimterex.duckdns.org", "user", "1234", QueueConstants.DATABASE_QUEUE);
-            var dataBaseFactory = new DataBaseFactory();
+            var host = Environment.GetEnvironmentVariable(RABBIT_HOST);
+            var dbPath = Environment.GetEnvironmentVariable(DB_PATH);
+
+            var daemon = new Daemon();
+            logger.Info(() => $"Host: {host}");
+            logger.Info(() => $"Database Path: {dbPath}");
             
-            // States
-            customerController.Configure(new AddNewStateAction(dataBaseFactory));
-            customerController.Configure(new AddNewStatesAction(dataBaseFactory));
-            customerController.Configure(new RemoveSyncStatesAction(dataBaseFactory));
-            customerController.Configure(new RemoveSyncStatesByAvailableFolderAction(dataBaseFactory));
+            daemon.Run(() =>
+            {
+                var customerController = new CustomerController(host, QueueConstants.DATABASE_QUEUE);
+                var dataBaseFactory = new DataBaseFactory(dbPath);
             
-            customerController.ConfigureWithResponse(new SyncStatesRequestAction(dataBaseFactory));
+                // States
+                customerController.Configure(new AddNewStateAction(dataBaseFactory));
+                customerController.Configure(new AddNewStatesAction(dataBaseFactory));
+                customerController.Configure(new RemoveSyncStatesAction(dataBaseFactory));
+                customerController.Configure(new RemoveSyncStatesByAvailableFolderAction(dataBaseFactory));
             
+                customerController.ConfigureWithResponse(new SyncStatesRequestAction(dataBaseFactory));
             
-            // Users
-            customerController.Configure(new AddNewUserInfoAction(dataBaseFactory));
-            customerController.ConfigureWithResponse(new AvailableFoldersForUserRequestAction(dataBaseFactory));
-            customerController.ConfigureWithResponse(new AvailableFoldersRequestAction(dataBaseFactory));
-            customerController.Configure(new RemoveUserInfoAction(dataBaseFactory));
+                // Users
+                customerController.Configure(new AddNewUserInfoAction(dataBaseFactory));
+                customerController.ConfigureWithResponse(new AvailableFoldersForUserRequestAction(dataBaseFactory));
+                customerController.ConfigureWithResponse(new AvailableFoldersRequestAction(dataBaseFactory));
+                customerController.Configure(new RemoveUserInfoAction(dataBaseFactory));
+                
+                logger.Info(() => $"Started");
+            });
             
-            Console.ReadLine();
-            
-            customerController.Stop();
         }
     }
 }

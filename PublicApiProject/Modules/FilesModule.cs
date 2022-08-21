@@ -2,49 +2,54 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using Core.Logger;
+using Core.Logger._Enums_;
+using Core.Logger._Interfaces_;
 using Core.Publisher;
-using FileSystemProject;
+using Core.Publisher._Interfaces_;
 using Newtonsoft.Json;
-using NLog;
 using PublicProject._Interfaces_;
+using PublicProject.Database.Actions.States;
 using SdkProject.Api.Files;
-using ServicesApi.Database.States;
 using ServicesApi.Telegram;
-using WebSocketSharp.Server;
 
 namespace PublicProject.Modules
 {
     public class FilesModule : BaseApiModule
     {
+        #region Constructors
+
+        public FilesModule(IConnectionStateManager connectionStateManager,
+            IRootService rootService,
+            AddNewStateExecutor addNewStateExecutor,
+            ApiController apiController,
+            ILoggerService loggerService) : base("files", new Version(0, 1), apiController)
+        {
+            _connectionStateManager = connectionStateManager;
+            _publisherController = rootService.PublisherService;
+            _addNewStateExecutor = addNewStateExecutor;
+            _loggerService = loggerService;
+        }
+
+        #endregion
 
         #region Constants
 
         private const string UPLOAD_REQUEST_NAME = "upload";
 
         private const string DOWNLOAD_REQUEST_NAME = "download";
-        
+
         private const int READ_FILE_BUFFER_SIZE = 81920;
+        private const string TAG = nameof(FilesModule);
 
         #endregion
 
         #region Fields
 
-        private readonly Logger _logger;
         private readonly IConnectionStateManager _connectionStateManager;
-        private readonly PublisherController _publisherController;
-
-        #endregion
-
-        #region Constructors
-
-
-        public FilesModule(IConnectionStateManager connectionStateManager,
-            PublisherController publisherController) : base("files", new Version(0, 1))
-        {
-            _logger = LogManager.GetCurrentClassLogger();
-            _connectionStateManager = connectionStateManager;
-            _publisherController = publisherController;
-        }
+        private readonly IPublisherService _publisherController;
+        private readonly AddNewStateExecutor _addNewStateExecutor;
+        private readonly ILoggerService _loggerService;
 
         #endregion
 
@@ -57,37 +62,48 @@ namespace PublicProject.Modules
             RegisterGetRequest<DownloadRequest>(DOWNLOAD_REQUEST_NAME, HandleDownloadRequest);
         }
 
-        private void HandleUploadRequest(UploadRequest request, HttpRequestEventArgs e)
+        private void HandleUploadRequest(UploadRequest request, HttpRequestEventModel e)
         {
-            _logger.Debug(() => $"Upload {request.FileName}");
-            
+            _loggerService.SendLog(LogLevel.Debug, TAG, () => $"Upload {request.FileName}");
+
             var login = _connectionStateManager.GetLoginByToken(request.Token);
-    
-            
-            bool isValidRequest = HandleUploadRequest(
+
+            var fileCrutch = JsonConvert.DeserializeObject<FileCrutch>(request.FileName);
+
+            if (fileCrutch == null)
+            {
+                e.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                _loggerService.SendLog(LogLevel.Warning, TAG, () => "Empty filename");
+                return;
+            }
+
+            var rawPath = GetRawPath(fileCrutch.FileName);
+
+            var isValidRequest = HandleUploadRequest(
                 login,
-                request.FileName,
+                rawPath,
                 e.Request.InputStream,
                 e.Request.ContentLength64,
-                out UploadResponse response,
-                out HttpStatusCode errorStatusCode,
-                out string errorMessage);
+                out var response,
+                out var errorStatusCode,
+                out var errorMessage);
 
             if (!isValidRequest)
             {
                 e.Response.StatusCode = (int)errorStatusCode;
-                _logger.Warn(() => errorMessage);
+                _loggerService.SendLog(LogLevel.Warning, TAG, () => errorMessage);
             }
 
-            _publisherController.Send(new TelegramMessage()
+            _publisherController.SendMessage(new TelegramMessage
             {
                 Message = $"Added from {login}: {request.FileName}"
             });
-            
+
             e.Response.SendChunked = true;
             using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
             {
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                    { NullValueHandling = NullValueHandling.Ignore });
                 var jsonWriter = new JsonTextWriter(streamWriter);
 
                 try
@@ -101,18 +117,18 @@ namespace PublicProject.Modules
             }
         }
 
-        private void HandleDownloadRequest(DownloadRequest request, HttpRequestEventArgs e)
+        private void HandleDownloadRequest(DownloadRequest request, HttpRequestEventModel e)
         {
             e.Response.SendChunked = true;
 
-            _logger.Debug(() => $"Download {request.FilePath}");
-            if (HandleDownloadRequest(request, e.Response.OutputStream, out HttpStatusCode errorStatusCode, out string errorMessage))
+            _loggerService.SendLog(LogLevel.Debug, TAG, () => $"Download {request.FilePath}");
+            if (HandleDownloadRequest(request, e.Response.OutputStream, out var errorStatusCode, out var errorMessage))
                 return;
-            
+
             e.Response.StatusCode = (int)errorStatusCode;
-            _logger.Trace(() => errorMessage);
+            _loggerService.SendLog(LogLevel.Trace, TAG, () => errorMessage);
         }
-        
+
         private bool HandleUploadRequest(
             string login,
             string filePath,
@@ -136,35 +152,43 @@ namespace PublicProject.Modules
             if (!fileInfo.Directory.Exists)
             {
                 fileInfo.Directory.Create();
-                _logger.Info(() => $"Directory {fileInfo.Directory} created.");
+                _loggerService.SendLog(LogLevel.Info, TAG, () => $"Directory {fileInfo.Directory} created.");
             }
 
             using (var fileStream = File.Create(filePath))
             {
                 stream.CopyTo(fileStream);
             }
-            
+
             response.Result = FilesOperationResult.Success;
-            response.FileId = Guid.NewGuid().ToString();
+            // response.FileId = Guid.NewGuid().ToString();
 
             errorStatusCode = HttpStatusCode.OK;
-            
-            _publisherController.Send(new AddNewState()
-            {
-                Login = login,
-                FilePath = filePath
-            });
-            
+
+
+            _addNewStateExecutor.Handler(login, filePath);
+
             errorMessage = null;
 
             return true;
         }
-        
-        private bool HandleDownloadRequest(DownloadRequest request, Stream stream, out HttpStatusCode errorStatusCode, out string errorMessage)
+
+        private bool HandleDownloadRequest(DownloadRequest request, Stream stream, out HttpStatusCode errorStatusCode,
+            out string errorMessage)
         {
             errorStatusCode = HttpStatusCode.Forbidden;
 
-            if (string.IsNullOrEmpty(request.FilePath) || !File.Exists(request.FilePath))
+            var fileCrutch = JsonConvert.DeserializeObject<FileCrutch>(request.FilePath);
+
+            if (fileCrutch == null)
+            {
+                errorStatusCode = HttpStatusCode.NotFound;
+                errorMessage = $"File {request.FilePath} is not exist!";
+                return false;
+            }
+
+            var rawPath = GetRawPath(fileCrutch.FileName);
+            if (string.IsNullOrEmpty(rawPath) || !File.Exists(rawPath))
             {
                 errorStatusCode = HttpStatusCode.NotFound;
                 errorMessage = $"File {request.FilePath} is not exist!";
@@ -175,7 +199,7 @@ namespace PublicProject.Modules
             // в который идёт запись до тех пор, пока поток не будет закрыт или не будет явно вызван метод `ResponseStream.Flush()`.
             // Чтобы при чтении больших файлов не уходить в `OutOfMemory`, читаем файл порционно.
             // read stream from file
-            using (Stream reader = File.OpenRead(request.FilePath))
+            using (Stream reader = File.OpenRead(rawPath))
             {
                 var buffer = new byte[READ_FILE_BUFFER_SIZE];
 
@@ -184,24 +208,35 @@ namespace PublicProject.Modules
                 {
                     stream.Write(buffer, 0, count);
                     stream.Flush();
-                    _logger.Trace(() => $"Sending {request.FilePath} ${count}/{reader.Length}");
+                    _loggerService.SendLog(LogLevel.Trace, TAG,
+                        () => $"Sending {request.FilePath} ${count}/{reader.Length}");
                 }
             }
 
             errorStatusCode = HttpStatusCode.OK;
-            
+
             var login = _connectionStateManager.GetLoginByToken(request.Token);
-            
-            _publisherController.Send(new AddNewState()
-            {
-                Login = login,
-                FilePath = request.FilePath
-            });
-            
+
+            _addNewStateExecutor.Handler(login, rawPath);
+
             errorMessage = null;
             return true;
         }
-        
+
+        private string GetRawPath(string[] names)
+        {
+            var sb = new StringBuilder();
+            foreach (var path in names) sb.Append($"{path}{Path.DirectorySeparatorChar}");
+
+            var rawPath = sb.ToString();
+            return rawPath.Substring(0, rawPath.Length - 1);
+        }
+
         #endregion
+    }
+
+    internal class FileCrutch
+    {
+        [JsonProperty(PropertyName = "path")] public string[] FileName { get; set; }
     }
 }

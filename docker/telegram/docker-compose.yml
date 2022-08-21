@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  telegram_bot:
+    build: 
+      dockerfile: Dockerfile
+      context: .
+    container_name: telegram_bot
+    image: telegram_bot:0.1
+    working_dir: /app
+    command: dotnet /app/telegram_bot/TelegramBotService
+    volumes:
+      - ../../telegram_bot:/app
+    environment:
+      - RABBIT_HOST=amqp://guest:guest@my_rabbit:5672
+      - TOKEN=TOKEN_HERE
+      - CHANNEL_ID=123456789
+    restart: unless-stopped
+
+networks:
+  default:
+    external:
+      name: internal_network
+

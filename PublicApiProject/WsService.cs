@@ -1,63 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Net;
 using System.Security.Authentication;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using NLog;
-using PublicProject._Interfaces_;
-using WebSocketSharp;
+using Core.Logger;
+using Core.Logger._Enums_;
+using Core.Logger._Interfaces_;
+using PublicProject.Modules;
 using WebSocketSharp.Server;
+using AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes;
 
 namespace PublicProject
 {
     public class WsService
     {
-        #region Constants
-
-        private const int BIND_SOCKET_INTERVAL = 1000;
-
-
-        #endregion Constants
-
-        #region Fields
-
-        private readonly IPAddress _listenAddress;
-        private readonly int _httpPort;
-        private readonly int _httpsPort;
-
-        private HttpServer _wsServer;
-        private HttpServer _wssServer;
-        private readonly ILogger _logger;
-
-        private Thread _socketThread;
-        private bool _isActive;
-
-        #endregion Fields
-
-        #region Properties
-
-        public ApiController Controller { get; }
-
-        #endregion Properties
+        private readonly ILoggerService _loggerService;
 
         #region Constructors
 
-        public WsService(
-            ApiController controller,
-            int httpPort,
-            int httpsPort)
+        public WsService(ApiController controller, ILoggerService loggerService)
         {
-            _logger = LogManager.GetCurrentClassLogger();
-            _logger.Info("Initializing servers and static data.");
+            _loggerService = loggerService;
+            _loggerService.SendLog(LogLevel.Info, TAG, () => "Initializing servers and static data.");
 
             Controller = controller;
-            _listenAddress =  IPAddress.Any;
-            _httpPort = httpPort;
-            _httpsPort = httpsPort;
+            _listenAddress = IPAddress.Any;
 
             _wsServer = null;
             _wssServer = null;
@@ -65,13 +32,44 @@ namespace PublicProject
 
         #endregion Constructors
 
+        #region Properties
+
+        public ApiController Controller { get; }
+
+        #endregion Properties
+
+        #region Constants
+
+        private const int BIND_SOCKET_INTERVAL = 1000;
+        private const string TAG = nameof(WsService);
+
+        #endregion Constants
+
+        #region Fields
+
+        private readonly IPAddress _listenAddress;
+        private int _httpPort;
+        private int _httpsPort;
+
+        private HttpServer _wsServer;
+        private HttpListener listener;
+
+        private HttpServer _wssServer;
+
+        private Thread _socketThread;
+        private bool _isActive;
+
+        #endregion Fields
+
         #region Methods
 
-        public void Start()
+        public void Start(int httpPort, int httpsPort)
         {
             if (_socketThread != null)
                 return;
 
+            _httpPort = httpPort;
+            _httpsPort = httpsPort;
             _isActive = true;
             _socketThread = new Thread(BindSocketsWorker);
             _socketThread.Start();
@@ -79,48 +77,28 @@ namespace PublicProject
 
         private void BindSocketsWorker()
         {
-            _logger.Info(@"
-                        ===================================================
-                        Started listening requests at: {0}:{1}
-                        ===================================================",
-                _listenAddress, _httpPort);
-            
+            _loggerService.SendLog(LogLevel.Info, TAG, () =>
+            {
+                var sb = new StringBuilder();
+                sb.Append("=================================================");
+                sb.Append($"Started listening requests at: {_listenAddress}:{_httpPort}");
+                sb.Append("=================================================");
+                return sb.ToString();
+            });
+
             while (_isActive)
             {
                 StartHttpServer();
                 // StartHttpsServer();
+
 
                 if (_wsServer != null && _wssServer != null)
                     break;
 
                 Thread.Sleep(BIND_SOCKET_INTERVAL);
             }
-            _logger.Info("Servers were started.");
-        }
 
-        public void Stop()
-        {
-            try
-            {
-                _logger.Debug("Threads are stopping.");
-
-                _isActive = false;
-                _socketThread?.Join();
-                _socketThread = null;
-
-                _wsServer?.Stop();
-                _wsServer = null;
-
-                _wssServer?.Stop();
-                _wssServer = null;
-
-                _logger.Debug("Threads were stopped.");
-
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-            }
+            _loggerService.SendLog(LogLevel.Info, TAG, () => "Servers were started.");
         }
 
         private void StartHttpServer()
@@ -132,13 +110,14 @@ namespace PublicProject
             {
                 _wsServer = new HttpServer(_listenAddress, _httpPort, false);
                 InitHttpServer(_wsServer);
-                _logger.Info(() => $"HttpServer server started: {_listenAddress}:{_httpPort}");
+                _loggerService.SendLog(LogLevel.Info, TAG,
+                    () => $"HttpServer server started: {_listenAddress}:{_httpPort}");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _wsServer?.Stop();
                 _wsServer = null;
-                _logger.Error(ex);
+                _loggerService.SendLog(LogLevel.Error, TAG, () => ex.ToString());
             }
         }
 
@@ -151,44 +130,47 @@ namespace PublicProject
             {
                 _wssServer = new HttpServer(_listenAddress, _httpsPort, true)
                 {
-                    AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes.Anonymous
+                    AuthenticationSchemes = AuthenticationSchemes.Anonymous
                 };
 
                 _wssServer.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12;
                 InitHttpServer(_wssServer);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _wssServer?.Stop();
                 _wssServer = null;
-                _logger.Error(ex);
+                _loggerService.SendLog(LogLevel.Error, TAG, () => ex.ToString());
             }
         }
 
         private void InitHttpServer(HttpServer server)
         {
-            server.OnGet += HandleRequest;
-            server.OnPost += HandleRequest;
+            server.WaitTime = TimeSpan.FromSeconds(100);
+            server.OnGet += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
+            server.OnPost += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
+            ;
             server.Start();
         }
 
-        private void HandleRequest(object sender, HttpRequestEventArgs e)
+        private void HandleRequest(HttpRequestEventModel model)
         {
-            _logger.Info(() => $"Handle request '{e.Request.RawUrl}'.");
-            
-            if (e.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
+            _loggerService.SendLog(LogLevel.Info, TAG, () => $"Handle request '{model.Request.RawUrl}'.");
+
+            if (model.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
             {
-                e.Response.Headers.Add("Access-Control-Allow-Origin: *");
-                Controller.HandleRequest(e.Request.Url.AbsolutePath.Substring(ApiController.API_RESOURCE_PATH.Length), e);
+                model.Response.Headers.Add("Access-Control-Allow-Origin: *");
+                Controller.HandleRequest(
+                    model.Request.Url.AbsolutePath.Substring(ApiController.API_RESOURCE_PATH.Length), model);
             }
             else
             {
                 // Неизвестный запрос:
-                e.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                _logger.Warn(() => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
+                model.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                _loggerService.SendLog(LogLevel.Warning, TAG,
+                    () => $"Can't route '{model.Request.RawUrl}' request to appropriate handler.");
             }
         }
-       
 
         #endregion Methods
     }

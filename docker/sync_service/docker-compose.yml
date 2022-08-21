@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  sync_service:
+    build: 
+      dockerfile: Dockerfile
+      context: .
+    container_name: sync_service
+    image: sync_service:0.1
+      ports:
+    - "60003:60003"
+    - "60004:60004"
+    working_dir: /app
+    command: ./PublicApiProject
+    volumes:
+      - ../../sync_service:/app
+      - /mnt/7F5DCC5C7797EDE5/Синхронизация:/shared
+      - ../../sqlite:/sqlite
+    ports:
+      - "60003:1234"
+      - "60004:1235"
+    environment:
+      - DB_PATH=/sqlite
+      - RABBIT_HOST=amqp://guest:guest@my_rabbit:5672
+    restart: unless-stopped
+
+networks:
+  default:
+    external:
+      name: internal_network
+

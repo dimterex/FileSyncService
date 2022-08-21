@@ -10,13 +10,6 @@ namespace SdkProject
 {
     public class SdkPacketSerializer
     {
-        #region Fields
-
-        private readonly Dictionary<Type, string> _messageEnc;
-        private readonly Dictionary<string, Type> _messageDec;
-
-        #endregion Fields
-
         #region Constructors
 
         public SdkPacketSerializer()
@@ -28,6 +21,13 @@ namespace SdkProject
 
         #endregion Constructors
 
+        #region Fields
+
+        private readonly Dictionary<Type, string> _messageEnc;
+        private readonly Dictionary<string, Type> _messageDec;
+
+        #endregion Fields
+
         #region Methods
 
         public SdkMessageContainer Serialize(ISdkMessage sdkMessage)
@@ -35,7 +35,7 @@ namespace SdkProject
             return new SdkMessageContainer
             {
                 Identifier = _messageEnc[sdkMessage.GetType()],
-                Value = sdkMessage,
+                Value = sdkMessage
             };
         }
 
@@ -48,7 +48,7 @@ namespace SdkProject
 
             return message;
         }
-        
+
         private void Initialize(Assembly assembly)
         {
             foreach (var type in assembly.GetTypes())

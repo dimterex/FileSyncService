@@ -5,22 +5,43 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Newtonsoft.Json;
+using PublicProject.Modules;
 using SdkProject;
 using SdkProject._Interfaces_;
 using SdkProject.Api;
 using SdkProject.Api.Sync;
-using ServicesApi.Common;
-using ServicesApi.Common._Interfaces_;
-using WebSocketSharp.Server;
 
 namespace PublicProject
 {
-   public abstract class BaseApiModule
+    public abstract class BaseApiModule
     {
+        #region Events
+
+        private readonly SdkPacketSerializer _sdkPacketSerializer;
+
+        #endregion Events
+
+        #region Constructors
+
+        protected BaseApiModule(string name, Version version, ApiController apiController)
+        {
+            _apiController = apiController;
+            Name = name;
+            Version = version;
+
+            _restMethods = new Dictionary<string, Action<HttpRequestEventModel>>();
+            _restRequestMethods = new Dictionary<Type, Action<ISdkMessage, ISdkMessage, HttpRequestEventModel>>();
+            _sdkPacketSerializer = new SdkPacketSerializer();
+            Initialize();
+        }
+
+        #endregion Constructors
+
         #region Fields
 
-        private readonly Dictionary<string, Action<HttpRequestEventArgs>> _restMethods;
-        private readonly Dictionary<Type, Action<ISdkMessage, ISdkMessage, HttpRequestEventArgs>> _restRequestMethods;
+        private readonly Dictionary<string, Action<HttpRequestEventModel>> _restMethods;
+        private readonly Dictionary<Type, Action<ISdkMessage, ISdkMessage, HttpRequestEventModel>> _restRequestMethods;
+        protected readonly ApiController _apiController;
 
         #endregion Fields
 
@@ -30,84 +51,56 @@ namespace PublicProject
 
         public Version Version { get; }
 
-        public ApiController ApiController { get; private set; }
-
-
         #endregion Properties
-
-        #region Events
-
-        private readonly SdkPacketSerializer _sdkPacketSerializer;
-
-        #endregion Events
-
-        #region Constructors
-
-        protected BaseApiModule(string name, Version version)
-        {
-            Name = name;
-            Version = version;
-
-            _restMethods = new Dictionary<string, Action<HttpRequestEventArgs>>();
-            _restRequestMethods = new Dictionary<Type, Action<ISdkMessage, ISdkMessage, HttpRequestEventArgs>>();
-            _sdkPacketSerializer = new SdkPacketSerializer();
-        } 
-
-        #endregion Constructors
 
         #region Methods
 
-        public void Initialize(ApiController controller)
+        private void Initialize()
         {
-            if (ApiController != null)
-                throw new Exception("Is already initialized");
-
-            ApiController = controller;
-
             const string request = "request";
-            
-            ApiController.RegisterRequest(request, this);
-            _restMethods.Add($"{"POST"} {Version.Major}/{request}", (e) =>
+
+            _apiController.RegisterRequest(request, this);
+            _restMethods.Add($"{"POST"} {Version.Major}/{request}", e =>
             {
-                
                 var data = DeserializeFromStream(e.Request.InputStream).ToString();
-                
+
                 var messages = JsonConvert.DeserializeObject<SdkMessageContainer[]>(data);
                 foreach (var message in messages)
                 {
                     var payload = _sdkPacketSerializer.Deserialize(message);
-                    
+
                     var type = payload.GetType();
-                    
-                    if (!_restRequestMethods.TryGetValue(type, out Action<ISdkMessage, ISdkMessage, HttpRequestEventArgs> method))
+
+                    if (!_restRequestMethods.TryGetValue(type, out var method))
                         return;
-              
+
                     method(DeserializeRequest<SyncFilesRequest>(e.Request.QueryString), payload, e);
                 }
             });
-            
+
             OnInitialize();
         }
 
-        public void Handle(string resource, HttpRequestEventArgs e)
+        public void Handle(string resource, HttpRequestEventModel e)
         {
-            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out Action<HttpRequestEventArgs> method))
+            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out var method))
             {
                 e.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                e.Response.StatusDescription = $"Unknown {e.Request.HttpMethod}-method '{resource}' or module '{Name}'.";
+                e.Response.StatusDescription =
+                    $"Unknown {e.Request.HttpMethod}-method '{resource}' or module '{Name}'.";
                 return;
             }
 
             method(e);
         }
-  
+
         private static T DeserializeRequest<T>(NameValueCollection query)
         {
             return JsonConvert.DeserializeObject<T>(
                 JsonConvert.SerializeObject(
                     query.Cast<string>().ToDictionary(key => key, value => query[value])));
         }
-        
+
         private static object DeserializeFromStream(Stream stream)
         {
             var serializer = new JsonSerializer();
@@ -120,31 +113,34 @@ namespace PublicProject
                 }
             }
         }
-        
-        protected void RegisterGetRequest<T>(string resourceName, Action<T, HttpRequestEventArgs> method)
+
+        protected void RegisterGetRequest<T>(string resourceName, Action<T, HttpRequestEventModel> method)
         {
-            RegisterRequest<T>("GET", resourceName, method);
+            RegisterRequest("GET", resourceName, method);
         }
 
-        protected void RegisterPostRequest<T>(string resourceName, Action<T, HttpRequestEventArgs> method)
+        protected void RegisterPostRequest<T>(string resourceName, Action<T, HttpRequestEventModel> method)
         {
-            RegisterRequest<T>("POST", resourceName, method);
+            RegisterRequest("POST", resourceName, method);
         }
 
-        private void RegisterRequest<T>(string httpMethod, string resourceName, Action<T, HttpRequestEventArgs> method)
+        private void RegisterRequest<T>(string httpMethod, string resourceName, Action<T, HttpRequestEventModel> method)
         {
-            ApiController.RegisterRequest(resourceName, this);
-            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}", (e) => method(DeserializeRequest<T>(e.Request.QueryString), e));
+            _apiController.RegisterRequest(resourceName, this);
+            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}",
+                e => method(DeserializeRequest<T>(e.Request.QueryString), e));
         }
-        
+
         /// <summary>
-        /// Регистрирует обработчик REST POST-запроса.
+        ///     Регистрирует обработчик REST POST-запроса.
         /// </summary>
         /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterPostRequestWithBody<TResponse>(Action<SyncFilesRequest, TResponse, HttpRequestEventArgs> method)
+        protected void RegisterPostRequestWithBody<TResponse>(
+            Action<SyncFilesRequest, TResponse, HttpRequestEventModel> method)
         {
-            _restRequestMethods.Add(typeof(TResponse), (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
-        } 
+            _restRequestMethods.Add(typeof(TResponse),
+                (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
+        }
 
         protected virtual void OnInitialize()
         {

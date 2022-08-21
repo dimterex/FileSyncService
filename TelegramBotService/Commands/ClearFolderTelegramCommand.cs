@@ -1,33 +1,31 @@
-﻿using System;
-using System.Text;
+﻿using System.Linq;
 using Core.Publisher;
-using ServicesApi.Database.Users;
 using ServicesApi.FileStorage;
 using TelegramBotService._Interfaces_;
+using TelegramBotService.Database.Actions;
 
 namespace TelegramBotService.Commands
 {
     public class ClearFolderTelegramCommand : ITelegramCommand
     {
-        private readonly PublisherController _publisherController;
+        private readonly AvailableFoldersRequestExecutor _availableFoldersRequestExecutor;
+        private readonly PublisherService _publisherService;
 
-        public ClearFolderTelegramCommand(PublisherController publisherController)
+        public ClearFolderTelegramCommand(PublisherService publisherService,
+            AvailableFoldersRequestExecutor availableFoldersRequestExecutor)
         {
-            _publisherController = publisherController;
+            _publisherService = publisherService;
+            _availableFoldersRequestExecutor = availableFoldersRequestExecutor;
         }
 
         public void Handle()
         {
-            var result = _publisherController.SendWithResponse(new AvailableFoldersRequest());
+            var filePaths = _availableFoldersRequestExecutor.Handler();
 
-            if (result is AvailableFoldersResponse availableFoldersResponse)
+            _publisherService.SendMessage(new ClearEmptyDirectories
             {
-                _publisherController.Send(new ClearEmptyDirectories()
-                {
-                    FilePaths = availableFoldersResponse.FilePaths
-                });
-               
-            }
+                FilePaths = filePaths.ToArray()
+            });
         }
     }
 }

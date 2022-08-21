@@ -9,6 +9,5 @@ namespace SdkProject.Api.Sync
     {
         [JsonProperty(PropertyName = "file_name")]
         public string[] FileName { get; set; }
-
     }
 }

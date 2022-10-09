@@ -39,7 +39,7 @@ namespace PublicProject.Factories
 
         private DictionaryModel Convert(FolderItem folderItem)
         {
-            var dictionaryModel = new DictionaryModel(folderItem.DictionaryPath);
+            var dictionaryModel = new DictionaryModel(PathHelper.GetRawPath(folderItem.DictionaryPath));
             foreach (var fileItem in folderItem.Files)
             {
                 var rawPath = PathHelper.GetRawPath(fileItem.Path);

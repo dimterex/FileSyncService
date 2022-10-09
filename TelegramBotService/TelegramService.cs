@@ -20,6 +20,7 @@ namespace TelegramBotService
         private readonly ITelegramBotClient _telegramBotClient;
 
         private readonly int _telegramId;
+        private readonly CancellationTokenSource _cancellationToketSource;
 
         public TelegramService(string botToken, int telegram_id, ILoggerService loggerService)
         {
@@ -30,11 +31,8 @@ namespace TelegramBotService
             _actionsService = new ActionsService(_loggerService);
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
             ReceiverOptions receiverOptions = new();
-
-            using var cts = new CancellationTokenSource();
-            {
-                _telegramBotClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, receiverOptions, cts.Token);
-            }
+            _cancellationToketSource = new CancellationTokenSource();
+            _telegramBotClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, receiverOptions, _cancellationToketSource.Token); 
         }
 
         public Task SendTextMessageAsync(string message)

@@ -1,15 +1,22 @@
-﻿using Newtonsoft.Json;
-using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Connection
+﻿namespace SdkProject.Api.Connection
 {
-    [SdkApiMessage("ConnectionRequest")]
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    using Newtonsoft.Json;
+
+    [SdkApiMessage("connection_request")]
     public class ConnectionRequest : ISdkMessage
     {
-        [JsonProperty(PropertyName = "login")] public string Login { get; set; }
+        #region Properties
+
+        [JsonProperty(PropertyName = "login")]
+        public string Login { get; set; }
 
         [JsonProperty(PropertyName = "password")]
         public string Password { get; set; }
+
+        #endregion
     }
 }

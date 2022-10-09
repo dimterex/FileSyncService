@@ -13,13 +13,7 @@ namespace PublicProject.Logic.Comparing
         public void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
             IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
         {
-            throw new NotImplementedException();
-        }
-
-        public void Apply(SyncStateFilesResponse response, IList<string> filesFromDataBase,
-            IList<DictionaryModel> filesFromDevice, IList<DictionaryModel> filesFromServer)
-        {
-            foreach (var fileFromDevice in filesFromDevice)
+            foreach (var fileFromDevice in deviceFolderFiles)
             {
                 var serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDevice.Path);
                 if (serverPath == null) continue;

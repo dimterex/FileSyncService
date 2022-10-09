@@ -1,20 +1,31 @@
-﻿using Newtonsoft.Json;
-using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Sync
+﻿namespace SdkProject.Api.Sync
 {
-    [SdkApiMessage("FileUpdatedResponse")]
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    using Newtonsoft.Json;
+
+    [SdkApiMessage("file_updated_response")]
     public class FileUpdatedResponse : ISdkMessage
     {
+        #region Properties
+
+        [JsonProperty(PropertyName = "file_name")]
+        public string[] FileName { get; set; }
+
+        [JsonProperty(PropertyName = "size")]
+        public long Size { get; set; }
+
+        #endregion
+
+        #region Constructors
+
         public FileUpdatedResponse()
         {
             Size = 0;
         }
 
-        [JsonProperty(PropertyName = "file_name")]
-        public string[] FileName { get; set; }
-
-        [JsonProperty(PropertyName = "size")] public long Size { get; set; }
+        #endregion
     }
 }

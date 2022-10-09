@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Sync
+﻿namespace SdkProject.Api.Sync
 {
-    [SdkApiMessage("SyncStateFilesResponse")]
+    using System.Collections.Generic;
+
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    using Newtonsoft.Json;
+
+    [SdkApiMessage("sync_state_files_response")]
     public class SyncStateFilesResponse : ISdkMessage
     {
         public SyncStateFilesResponse()

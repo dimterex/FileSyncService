@@ -54,6 +54,7 @@ namespace PublicProject.Logic
             foreach (var folder in availableFolders)
             {
                 var dictModel = new DictionaryModel(folder);
+                serverFiles.Add(dictModel);
                 var rootFiles = _fileManager.GetFiles(folder);
 
                 foreach (var fileInfoModel in rootFiles)

@@ -1,13 +1,19 @@
-﻿using Newtonsoft.Json;
-using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Sync
+﻿namespace SdkProject.Api.Sync
 {
-    [SdkApiMessage("FileServerRemovedResponse")]
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    using Newtonsoft.Json;
+
+    [SdkApiMessage("file_database_add_response")]
     public class FileDataBaseAddResponse : ISdkMessage
     {
+        #region Properties
+
         [JsonProperty(PropertyName = "file_name")]
         public string[] FileName { get; set; }
+
+        #endregion
     }
 }

@@ -13,17 +13,19 @@ namespace PublicProject.Logic.Comparing
             IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
         {
             foreach (var fileFromDataBase in filesFromDataBase)
-            foreach (var fileFromServer in filesFromServer)
             {
-                if (fileFromServer.Path != fileFromDataBase)
-                    continue;
-
-                var devicePath = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
-                if (devicePath == null)
+                foreach (var fileFromServer in filesFromServer)
                 {
-                    var fileUpdatedResponse = new FileServerRemovedResponse();
-                    fileUpdatedResponse.FileName = PathHelper.GetListOfPath(fileFromServer.Path);
-                    response.ServerRemovedFiles.Add(fileUpdatedResponse);
+                    if (fileFromServer.Path != fileFromDataBase)
+                        continue;
+
+                    var devicePath = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
+                    if (devicePath == null)
+                    {
+                        var fileUpdatedResponse = new FileServerRemovedResponse();
+                        fileUpdatedResponse.FileName = PathHelper.GetListOfPath(fileFromServer.Path);
+                        response.ServerRemovedFiles.Add(fileUpdatedResponse);
+                    }
                 }
             }
         }

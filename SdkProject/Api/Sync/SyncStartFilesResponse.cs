@@ -1,9 +1,10 @@
-﻿using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Sync
+﻿namespace SdkProject.Api.Sync
 {
-    [SdkApiMessage("SyncStartFilesResponse")]
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    [SdkApiMessage("sync_start_files_response")]
     public class SyncStartFilesResponse : ISdkMessage
     {
     }

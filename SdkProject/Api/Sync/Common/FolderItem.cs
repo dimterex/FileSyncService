@@ -1,19 +1,28 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-
-namespace SdkProject.Api.Sync.Common
+﻿namespace SdkProject.Api.Sync.Common
 {
+    using System.Collections.Generic;
+
+    using Newtonsoft.Json;
+
     public class FolderItem
     {
+        #region Properties
+
+        [JsonProperty(PropertyName = "files")]
+        public List<FileItem> Files { get; set; }
+
+        [JsonProperty(PropertyName = "path")]
+        public string[] DictionaryPath { get; set; }
+
+        #endregion
+
+        #region Constructors
+
         public FolderItem()
         {
             Files = new List<FileItem>();
-            DictionaryPath = string.Empty;
         }
 
-        [JsonProperty(PropertyName = "files")] public List<FileItem> Files { get; set; }
-
-        [JsonProperty(PropertyName = "dictionary")]
-        public string DictionaryPath { get; set; }
+        #endregion
     }
 }

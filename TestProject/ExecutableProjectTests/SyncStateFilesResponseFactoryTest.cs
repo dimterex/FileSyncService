@@ -49,7 +49,7 @@ namespace TestProject.ExecutableProjectTests
             };
 
             var firstDeviceFolderItem = new FolderItem();
-            firstDeviceFolderItem.DictionaryPath = DICTIONARY_PATH;
+            firstDeviceFolderItem.DictionaryPath = new []{ DICTIONARY_PATH };
             firstDeviceFolderItem.Files.Add(new FileItem { Path = new[] { DICTIONARY_PATH, FIRST_FILE_PATH } });
 
             var deviceFolders = new List<FolderItem>

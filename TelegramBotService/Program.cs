@@ -2,9 +2,8 @@
 using Common.DatabaseProject;
 using Core.Customer;
 using Core.Daemon;
-using Core.Logger;
-using Core.Logger._Enums_;
 using Core.Publisher;
+using NLog;
 using ServicesApi;
 using TelegramBotService.Actions;
 using TelegramBotService.Commands;
@@ -33,26 +32,23 @@ namespace TelegramBotService
             var daemon = new Daemon();
             daemon.Run(() =>
             {
-                var logservice = new LoggerService();
-
+                var logger = LogManager.GetLogger(TAG);
                 var dbPath = Environment.GetEnvironmentVariable(DB_PATH);
                 var database = new DataBaseFactory(dbPath);
-                logservice.SendLog(LogLevel.Info, TAG, () => "Starting...");
+                logger.Info( () => "Starting...");
 
-                var customerController = new CustomerController(host, QueueConstants.TELEGRAM_QUEUE, logservice);
+                var customerController = new CustomerController(host, QueueConstants.TELEGRAM_QUEUE);
 
                 // States
-                var telegramService = new TelegramService(token, channelId, logservice);
+                var telegramService = new TelegramService(token, channelId);
                 customerController.Configure(new TelegramMessageAction(telegramService));
 
-                var publisherController = new PublisherService(host, logservice);
-
-                var rootService = new RootService(logservice, publisherController);
+                var publisherController = new PublisherService(host);
                 var availableFoldersRequestExecutor = new AvailableFoldersRequestExecutor(database);
 
                 telegramService.Configure("/clean_folders", "clean empty folders",
                     new ClearFolderTelegramCommand(publisherController, availableFoldersRequestExecutor));
-                logservice.SendLog(LogLevel.Info, TAG, () => "Started");
+                logger.Info( () => "Started");
             });
         }
     }

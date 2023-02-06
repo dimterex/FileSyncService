@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
-using Core.Publisher;
 using Core.Publisher._Interfaces_;
 using FileSystemProject;
+using NLog;
 using PublicProject._Interfaces_;
 using PublicProject._Interfaces_.Factories;
 using PublicProject.Database.Actions.States;
@@ -24,11 +21,12 @@ namespace PublicProject.Modules
         private readonly IConnectionStateManager _connectionStateManager;
 
         private readonly IFileManager _fileManager;
-        private readonly ILoggerService _loggerService;
         private readonly IPublisherService _publisherController;
         private readonly RemoveSyncStatesExecutor _removeSyncStatesExecutor;
+        private readonly IHistoryService _historyService;
         private readonly ISyncStateFilesResponseService _syncStateFilesResponseService;
         private readonly ISyncStateFilesResponseTaskFactory _syncStateFilesResponseTaskFactory;
+        private readonly ILogger _logger;
 
         public CoreModule(IFileManager fileManager,
             IConnectionStateManager connectionStateManager,
@@ -38,8 +36,8 @@ namespace PublicProject.Modules
             IConnectionRequestTaskFactory connectionRequestTaskFactory,
             AddNewStatesExecutor addNewStatesExecutor,
             RemoveSyncStatesExecutor removeSyncStatesExecutor,
-            ApiController apiController,
-            ILoggerService loggerService) : base("core", new Version(0, 1), apiController)
+            IApiController apiController,
+            IHistoryService historyService) : base("core", new Version(0, 1), apiController)
         {
             _fileManager = fileManager;
             _connectionStateManager = connectionStateManager;
@@ -49,7 +47,8 @@ namespace PublicProject.Modules
             _connectionRequestTaskFactory = connectionRequestTaskFactory;
             _addNewStatesExecutor = addNewStatesExecutor;
             _removeSyncStatesExecutor = removeSyncStatesExecutor;
-            _loggerService = loggerService;
+            _historyService = historyService;
+            _logger = LogManager.GetLogger(TAG);
         }
 
         protected override void OnInitialize()
@@ -66,7 +65,7 @@ namespace PublicProject.Modules
             if (string.IsNullOrEmpty(login))
             {
                 _apiController.SetErrorResponse(e);
-                _loggerService.SendLog(LogLevel.Error, TAG, () => $"Could find login for token: {fileAction.Token}");
+                _logger.Error(() => $"Could find login for token: {fileAction.Token}");
                 return;
             }
 
@@ -74,7 +73,7 @@ namespace PublicProject.Modules
             if (stateFilesResponse == null)
             {
                 _apiController.SetErrorResponse(e);
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"Couldn't find sync state for {login}");
+                _logger.Error(() => $"Couldn't find sync state for {login}");
                 return;
             }
 
@@ -91,6 +90,7 @@ namespace PublicProject.Modules
                 {
                     var path = PathHelper.GetRawPath(filePath.FileName);
                     _fileManager.RemoveFile(path);
+                    _historyService.AddNewEvent(login, path, "Removed");
                     _publisherController.SendMessage(new TelegramMessage
                     {
                         Message = $"Remove {path}"
@@ -116,7 +116,7 @@ namespace PublicProject.Modules
             if (string.IsNullOrEmpty(login))
             {
                 _apiController.SetErrorResponse(e);
-                _loggerService.SendLog(LogLevel.Error, TAG, () => $"Could find login for token: {fileAction.Token}");
+                _logger.Error(() => $"Could find login for token: {fileAction.Token}");
                 return;
             }
 

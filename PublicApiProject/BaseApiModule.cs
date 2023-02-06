@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Newtonsoft.Json;
+using PublicProject._Interfaces_;
 using PublicProject.Modules;
 using SdkProject;
 using SdkProject._Interfaces_;
@@ -23,7 +24,7 @@ namespace PublicProject
 
         #region Constructors
 
-        protected BaseApiModule(string name, Version version, ApiController apiController)
+        protected BaseApiModule(string name, Version version, IApiController apiController)
         {
             _apiController = apiController;
             Name = name;
@@ -41,7 +42,7 @@ namespace PublicProject
 
         private readonly Dictionary<string, Action<HttpRequestEventModel>> _restMethods;
         private readonly Dictionary<Type, Action<ISdkMessage, ISdkMessage, HttpRequestEventModel>> _restRequestMethods;
-        protected readonly ApiController _apiController;
+        protected readonly IApiController _apiController;
 
         #endregion Fields
 

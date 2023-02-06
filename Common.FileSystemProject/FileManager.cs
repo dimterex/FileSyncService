@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
+using NLog;
 
 namespace FileSystemProject
 {
@@ -11,17 +9,17 @@ namespace FileSystemProject
     {
         private const string TAG = nameof(FileManager);
         private readonly IFileSystemService _fileSystemService;
-        private readonly ILoggerService _loggerService;
+        private readonly ILogger _logger;
 
-        public FileManager(IFileSystemService fileSystemService, ILoggerService loggerService)
+        public FileManager(IFileSystemService fileSystemService)
         {
             _fileSystemService = fileSystemService;
-            _loggerService = loggerService;
+            _logger = LogManager.GetLogger(TAG);
         }
 
         public IList<FileInfoModel> GetFiles(string folderPath)
         {
-            var ls = GetFileDatas(folderPath);
+            var ls = GetFileData(folderPath);
 
             var result = ls.OrderBy(info => info.LastWriteTime)
                 .Select(info => new FileInfoModel(info.FullName, info.Length)).ToList();
@@ -31,7 +29,7 @@ namespace FileSystemProject
 
         public void RemoveFile(string filePath)
         {
-            _loggerService.SendLog(LogLevel.Debug, TAG, () => $"Remove {filePath}");
+            _logger.Debug(() => $"Remove {filePath}");
             _fileSystemService.RemoveFile(filePath);
         }
 
@@ -49,7 +47,7 @@ namespace FileSystemProject
             return result;
         }
 
-        private IList<FileInfo> GetFileDatas(string folderPath)
+        private IList<FileInfo> GetFileData(string folderPath)
         {
             var ls = new List<FileInfo>();
 
@@ -65,7 +63,7 @@ namespace FileSystemProject
                 ls.Add(fileInfo);
             }
 
-            foreach (var folder in directories) ls.AddRange(GetFileDatas(folder));
+            foreach (var folder in directories) ls.AddRange(GetFileData(folder));
 
             return ls;
         }

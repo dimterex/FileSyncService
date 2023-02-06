@@ -17,7 +17,10 @@ namespace PublicProject.Database.Actions.States
         {
             using (var dataBase = _dataBaseFactory.Create())
             {
-                foreach (var filePath in filePaths) AddSyncState(login, filePath, dataBase);
+                foreach (var filePath in filePaths)
+                {
+                    AddSyncState(login, filePath, dataBase);
+                }
 
                 dataBase.ApplyChanges();
             }

@@ -11,7 +11,7 @@ namespace PublicProject.Factories
 {
     public class SyncStateFilesResponseTaskFactory : ISyncStateFilesResponseTaskFactory
     {
-        private readonly ApiController _apiController;
+        private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly IFileManager _fileManager;
         private readonly ISyncStateFilesResponseFactory _syncStateFilesResponseFactory;
@@ -21,7 +21,7 @@ namespace PublicProject.Factories
         public SyncStateFilesResponseTaskFactory(
             IFileManager fileManager,
             ISyncStateFilesResponseService syncStateFilesResponseService,
-            ApiController apiController,
+            IApiController apiController,
             ISyncStateFilesResponseFactory syncStateFilesResponseFactory,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
             SyncStatesRequestExecutor syncStatesRequestExecutor)

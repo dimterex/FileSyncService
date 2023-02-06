@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
 using Newtonsoft.Json;
+using NLog;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using ServicesApi;
@@ -18,15 +16,15 @@ namespace Core.Customer
         private const string TAG = nameof(CustomerController);
         private readonly IConnection _connection;
         private readonly IModel _connectionChannel;
-        private readonly ILoggerService _loggerService;
 
         private readonly Dictionary<Type, Action<IMessage>> _methods;
         private readonly RabbitMqPacketSerializer _package;
+        private readonly ILogger _logger;
 
-        public CustomerController(string host, string queue, ILoggerService loggerService)
+        public CustomerController(string host, string queue)
         {
-            _loggerService = loggerService;
-            _loggerService.SendLog(LogLevel.Info, TAG, () => "Initializing...");
+            _logger = LogManager.GetLogger(TAG);
+            _logger.Info(() => "Initializing...");
             _package = new RabbitMqPacketSerializer();
             _methods = new Dictionary<Type, Action<IMessage>>();
 
@@ -66,18 +64,18 @@ namespace Core.Customer
                 true,
                 consumer);
 
-            _loggerService.SendLog(LogLevel.Info, TAG, () => $"Subscribed to the queue '{queue}'");
+            _logger.Info(() => $"Subscribed to the queue '{queue}'");
         }
 
         private void Received(string data, Action<RabbitMqMessageContainer> sendResponse)
         {
             if (string.IsNullOrWhiteSpace(data))
             {
-                _loggerService.SendLog(LogLevel.Error, TAG, () => "Emtpy data.");
+                _logger.Error(() => "Emtpy data.");
                 return;
             }
 
-            _loggerService.SendLog(LogLevel.Trace, TAG, () => $"Received: {data}.");
+            _logger.Trace(() => $"Received: {data}.");
             var message = JsonConvert.DeserializeObject<RabbitMqMessageContainer>(data);
             var payload = _package.Deserialize(message);
 
@@ -91,7 +89,7 @@ namespace Core.Customer
         {
             if (_methods.TryGetValue(typeof(T), out var method))
             {
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{typeof(T)} was configured.");
+                _logger.Warn(()=> $"{typeof(T)} was configured.");
                 return;
             }
 

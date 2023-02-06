@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
@@ -16,19 +14,19 @@ namespace TelegramBotService
     {
         private const string TAG = nameof(TelegramService);
         private readonly ActionsService _actionsService;
-        private readonly ILoggerService _loggerService;
         private readonly ITelegramBotClient _telegramBotClient;
 
         private readonly int _telegramId;
         private readonly CancellationTokenSource _cancellationToketSource;
+        private readonly ILogger _logger;
 
-        public TelegramService(string botToken, int telegram_id, ILoggerService loggerService)
+        public TelegramService(string botToken, int telegram_id)
         {
+            _logger = LogManager.GetLogger(TAG);
             _telegramId = telegram_id;
-            _loggerService = loggerService;
             _telegramBotClient = new TelegramBotClient(botToken);
 
-            _actionsService = new ActionsService(_loggerService);
+            _actionsService = new ActionsService();
             // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
             ReceiverOptions receiverOptions = new();
             _cancellationToketSource = new CancellationTokenSource();
@@ -58,7 +56,7 @@ namespace TelegramBotService
                     _ => exception.ToString()
                 };
 
-                _loggerService.SendLog(LogLevel.Error, TAG, () => errorMessage);
+                _logger.Error(() => errorMessage);
             }, cancellationToken);
         }
 

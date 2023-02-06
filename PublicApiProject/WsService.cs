@@ -3,9 +3,8 @@ using System.Net;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
+using NLog;
+using PublicProject._Interfaces_;
 using PublicProject.Modules;
 using WebSocketSharp.Server;
 using AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes;
@@ -14,14 +13,12 @@ namespace PublicProject
 {
     public class WsService
     {
-        private readonly ILoggerService _loggerService;
-
         #region Constructors
 
-        public WsService(ApiController controller, ILoggerService loggerService)
+        public WsService(IApiController controller)
         {
-            _loggerService = loggerService;
-            _loggerService.SendLog(LogLevel.Info, TAG, () => "Initializing servers and static data.");
+            _logger = LogManager.GetLogger(TAG);
+            _logger.Info(() => "Initializing servers and static data.");
 
             Controller = controller;
             _listenAddress = IPAddress.Any;
@@ -34,7 +31,7 @@ namespace PublicProject
 
         #region Properties
 
-        public ApiController Controller { get; }
+        public IApiController Controller { get; }
 
         #endregion Properties
 
@@ -57,6 +54,7 @@ namespace PublicProject
 
         private Thread _socketThread;
         private bool _isActive;
+        private readonly ILogger _logger;
 
         #endregion Fields
 
@@ -76,7 +74,7 @@ namespace PublicProject
 
         private void BindSocketsWorker()
         {
-            _loggerService.SendLog(LogLevel.Info, TAG, () =>
+            _logger.Info(() =>
             {
                 var sb = new StringBuilder();
                 sb.Append("=================================================");
@@ -97,7 +95,7 @@ namespace PublicProject
                 Thread.Sleep(BIND_SOCKET_INTERVAL);
             }
 
-            _loggerService.SendLog(LogLevel.Info, TAG, () => "Servers were started.");
+            _logger.Info(() => "Servers were started.");
         }
 
         private void StartHttpServer()
@@ -109,14 +107,13 @@ namespace PublicProject
             {
                 _wsServer = new HttpServer(_listenAddress, _httpPort, false);
                 InitHttpServer(_wsServer);
-                _loggerService.SendLog(LogLevel.Info, TAG,
-                    () => $"HttpServer server started: {_listenAddress}:{_httpPort}");
+                _logger.Info(() => $"HttpServer server started: {_listenAddress}:{_httpPort}");
             }
             catch (Exception ex)
             {
                 _wsServer?.Stop();
                 _wsServer = null;
-                _loggerService.SendLog(LogLevel.Error, TAG, () => ex.ToString());
+                _logger.Error(() => ex.ToString());
             }
         }
 
@@ -139,7 +136,7 @@ namespace PublicProject
             {
                 _wssServer?.Stop();
                 _wssServer = null;
-                _loggerService.SendLog(LogLevel.Error, TAG, () => ex.ToString());
+                _logger.Error(() => ex.ToString());
             }
         }
 
@@ -148,13 +145,12 @@ namespace PublicProject
             server.WaitTime = TimeSpan.FromSeconds(100);
             server.OnGet += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
             server.OnPost += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
-            ;
             server.Start();
         }
 
         private void HandleRequest(HttpRequestEventModel model)
         {
-            _loggerService.SendLog(LogLevel.Info, TAG, () => $"Handle request '{model.Request.RawUrl}'.");
+            _logger.Info(() => $"Handle request '{model.Request.RawUrl}'.");
 
             if (model.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
             {
@@ -166,8 +162,7 @@ namespace PublicProject
             {
                 // Неизвестный запрос:
                 model.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                _loggerService.SendLog(LogLevel.Warning, TAG,
-                    () => $"Can't route '{model.Request.RawUrl}' request to appropriate handler.");
+                _logger.Warn(() => $"Can't route '{model.Request.RawUrl}' request to appropriate handler.");
             }
         }
 

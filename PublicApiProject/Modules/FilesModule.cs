@@ -2,12 +2,9 @@
 using System.IO;
 using System.Net;
 using System.Text;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
-using Core.Publisher;
 using Core.Publisher._Interfaces_;
 using Newtonsoft.Json;
+using NLog;
 using PublicProject._Interfaces_;
 using PublicProject.Database.Actions.States;
 using SdkProject.Api.Files;
@@ -22,13 +19,14 @@ namespace PublicProject.Modules
         public FilesModule(IConnectionStateManager connectionStateManager,
             IRootService rootService,
             AddNewStateExecutor addNewStateExecutor,
-            ApiController apiController,
-            ILoggerService loggerService) : base("files", new Version(0, 1), apiController)
+            IApiController apiController,
+            IHistoryService historyService) : base("files", new Version(0, 1), apiController)
         {
             _connectionStateManager = connectionStateManager;
             _publisherController = rootService.PublisherService;
             _addNewStateExecutor = addNewStateExecutor;
-            _loggerService = loggerService;
+            _historyService = historyService;
+            _logger = LogManager.GetLogger(TAG);
         }
 
         #endregion
@@ -49,7 +47,8 @@ namespace PublicProject.Modules
         private readonly IConnectionStateManager _connectionStateManager;
         private readonly IPublisherService _publisherController;
         private readonly AddNewStateExecutor _addNewStateExecutor;
-        private readonly ILoggerService _loggerService;
+        private readonly IHistoryService _historyService;
+        private readonly Logger _logger;
 
         #endregion
 
@@ -64,7 +63,7 @@ namespace PublicProject.Modules
 
         private void HandleUploadRequest(UploadRequest request, HttpRequestEventModel e)
         {
-            _loggerService.SendLog(LogLevel.Debug, TAG, () => $"Upload {request.FileName}");
+            _logger.Debug(() => $"Upload {request.FileName}");
 
             var login = _connectionStateManager.GetLoginByToken(request.Token);
 
@@ -73,7 +72,7 @@ namespace PublicProject.Modules
             if (fileCrutch == null)
             {
                 e.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => "Empty filename");
+                _logger.Warn(() => "Empty filename");
                 return;
             }
 
@@ -91,7 +90,7 @@ namespace PublicProject.Modules
             if (!isValidRequest)
             {
                 e.Response.StatusCode = (int)errorStatusCode;
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => errorMessage);
+                _logger.Warn(() => errorMessage);
             }
 
             _publisherController.SendMessage(new TelegramMessage
@@ -121,12 +120,12 @@ namespace PublicProject.Modules
         {
             e.Response.SendChunked = true;
 
-            _loggerService.SendLog(LogLevel.Debug, TAG, () => $"Download {request.FilePath}");
+            _logger.Debug(() => $"Download {request.FilePath}");
             if (HandleDownloadRequest(request, e.Response.OutputStream, out var errorStatusCode, out var errorMessage))
                 return;
 
             e.Response.StatusCode = (int)errorStatusCode;
-            _loggerService.SendLog(LogLevel.Trace, TAG, () => errorMessage);
+            _logger.Debug(() => errorMessage);
         }
 
         private bool HandleUploadRequest(
@@ -152,7 +151,7 @@ namespace PublicProject.Modules
             if (!fileInfo.Directory.Exists)
             {
                 fileInfo.Directory.Create();
-                _loggerService.SendLog(LogLevel.Info, TAG, () => $"Directory {fileInfo.Directory} created.");
+                _logger.Info(() => $"Directory {fileInfo.Directory} created.");
             }
 
             using (var fileStream = File.Create(filePath))
@@ -167,14 +166,14 @@ namespace PublicProject.Modules
 
 
             _addNewStateExecutor.Handler(login, filePath);
+            _historyService.AddNewEvent(login, filePath, "Uploaded");
 
             errorMessage = null;
 
             return true;
         }
 
-        private bool HandleDownloadRequest(DownloadRequest request, Stream stream, out HttpStatusCode errorStatusCode,
-            out string errorMessage)
+        private bool HandleDownloadRequest(DownloadRequest request, Stream stream, out HttpStatusCode errorStatusCode, out string errorMessage)
         {
             errorStatusCode = HttpStatusCode.Forbidden;
 
@@ -195,10 +194,6 @@ namespace PublicProject.Modules
                 return false;
             }
 
-            // В реализации `ResponseStream` в качестве буфера используется `MemoryStream`,
-            // в который идёт запись до тех пор, пока поток не будет закрыт или не будет явно вызван метод `ResponseStream.Flush()`.
-            // Чтобы при чтении больших файлов не уходить в `OutOfMemory`, читаем файл порционно.
-            // read stream from file
             using (Stream reader = File.OpenRead(rawPath))
             {
                 var buffer = new byte[READ_FILE_BUFFER_SIZE];
@@ -208,8 +203,7 @@ namespace PublicProject.Modules
                 {
                     stream.Write(buffer, 0, count);
                     stream.Flush();
-                    _loggerService.SendLog(LogLevel.Trace, TAG,
-                        () => $"Sending {request.FilePath} ${count}/{reader.Length}");
+                    _logger.Trace(() => $"Sending {request.FilePath} ${count}/{reader.Length}");
                 }
             }
 
@@ -218,6 +212,7 @@ namespace PublicProject.Modules
             var login = _connectionStateManager.GetLoginByToken(request.Token);
 
             _addNewStateExecutor.Handler(login, rawPath);
+            _historyService.AddNewEvent(login, rawPath, "Download");
 
             errorMessage = null;
             return true;

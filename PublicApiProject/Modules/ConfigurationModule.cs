@@ -1,4 +1,5 @@
 ﻿using System;
+using PublicProject._Interfaces_;
 using PublicProject.Database.Actions.States;
 using PublicProject.Database.Actions.Users;
 using SdkProject.Api.Confguration;
@@ -13,7 +14,7 @@ namespace PublicProject.Modules
         private readonly RemoveSyncStatesByAvailableFolderExecutor _removeSyncStatesByAvailableFolderExecutor;
         private readonly RemoveUserInfoExecutor _removeUserInfoExecutor;
 
-        public ConfigurationModule(ApiController apiController,
+        public ConfigurationModule(IApiController apiController,
             AddNewUserInfoExecutor addNewUserInfoExecutor,
             RemoveUserInfoExecutor removeUserInfoExecutor,
             RemoveSyncStatesByAvailableFolderExecutor removeSyncStatesByAvailableFolderExecutor,

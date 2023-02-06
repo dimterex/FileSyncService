@@ -11,7 +11,7 @@ namespace PublicProject.Logic
 {
     public class SyncStateFilesResponseTask
     {
-        private readonly ApiController _apiController;
+        private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly SyncStateFilesBodyRequest _bodyRequest;
         private readonly IFileManager _fileManager;
@@ -28,7 +28,7 @@ namespace PublicProject.Logic
             HttpRequestEventModel httpRequestEventModel,
             IFileManager fileManager,
             ISyncStateFilesResponseService syncStateFilesResponseService,
-            ApiController apiController,
+            IApiController apiController,
             ISyncStateFilesResponseFactory syncStateFilesResponseFactory,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
             SyncStatesRequestExecutor syncStatesRequestExecutor)

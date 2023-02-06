@@ -15,7 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ExecutableProject\ExecutableProject.csproj"/>
         <ProjectReference Include="..\Common.FileSystemProject\Common.FileSystemProject.csproj"/>
         <ProjectReference Include="..\PublicApiProject\PublicApiProject.csproj"/>
     </ItemGroup>

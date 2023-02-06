@@ -19,7 +19,10 @@ namespace PublicProject.Database.Actions.States
             using (var dataBase = _dataBaseFactory.Create())
             {
                 var syncStates = dataBase.SyncStates.ToList().Where(x => x.Login == login);
-                foreach (var syncState in syncStates) result.Add(syncState.FilePath);
+                foreach (var syncState in syncStates)
+                {
+                    result.Add(syncState.FilePath);
+                }
             }
 
             return result;

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Text;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
 using Core.Publisher._Interfaces_;
+using NLog;
 using RabbitMQ.Client;
 using ServicesApi;
 using ServicesApi.Common._Interfaces_;
@@ -14,24 +12,23 @@ namespace Core.Publisher
     {
         private const string TAG = nameof(PublisherService);
         private readonly string _host;
-        private readonly ILoggerService _loggerService;
 
         private readonly RabbitMqPacketSerializer _package;
+        private readonly ILogger _logger;
 
-        public PublisherService(string host, ILoggerService loggerService)
+        public PublisherService(string host)
         {
+            _logger = LogManager.GetLogger(TAG);
             _host = host;
-            _loggerService = loggerService;
             _package = new RabbitMqPacketSerializer();
-            _loggerService.SendLog(LogLevel.Info, TAG, () => $"Publisher {host} created.");
+            _logger.Info(() => $"Publisher {host} created.");
         }
 
         public void SendMessage(IMessage message)
         {
             var messageContainer = _package.Serialize(message);
             var rawMessage = messageContainer.Serialize();
-            if (messageContainer.Queue != QueueConstants.LOGGER_QUEUE)
-                _loggerService.SendLog(LogLevel.Info, TAG, () => $"Send: {rawMessage}.");
+            _logger.Info(() => $"Send: {rawMessage}.");
 
             var messageBytes = Encoding.UTF8.GetBytes(rawMessage);
 

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,13 +11,13 @@ namespace TelegramBotService
     {
         private const string TAG = nameof(ActionsService);
         private readonly ConcurrentDictionary<UpdateType, IReceivedAction> _actions;
-        private readonly ILoggerService _loggerService;
+        private readonly ILogger _logger;
 
-        public ActionsService(ILoggerService loggerService)
+        public ActionsService()
         {
-            _loggerService = loggerService;
+            _logger = LogManager.GetLogger(TAG);
             _actions = new ConcurrentDictionary<UpdateType, IReceivedAction>();
-            var messageReceivedAction = new MessageReceivedAction(_loggerService);
+            var messageReceivedAction = new MessageReceivedAction();
             _actions.TryAdd(UpdateType.Message, messageReceivedAction);
         }
 
@@ -28,7 +26,7 @@ namespace TelegramBotService
             if (_actions.TryGetValue(update.Type, out var action))
                 action.Execute(botClient, update.Message ?? update.EditedMessage);
             else
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{update.Type} doesn't supported.");
+                _logger.Warn(() => $"{update.Type} doesn't supported.");
         }
 
         public void Configure(string message, string comment, ITelegramCommand callback)
@@ -36,7 +34,7 @@ namespace TelegramBotService
             if (_actions.TryGetValue(UpdateType.Message, out var action))
                 action.Configure(message, comment, callback);
             else
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{UpdateType.Message} doesn't supported.");
+                _logger.Warn(() => $"{UpdateType.Message} doesn't supported.");
         }
     }
 }

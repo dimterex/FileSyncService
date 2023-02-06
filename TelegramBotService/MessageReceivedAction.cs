@@ -2,9 +2,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
-using Core.Logger;
-using Core.Logger._Enums_;
-using Core.Logger._Interfaces_;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,11 +16,11 @@ namespace TelegramBotService
         private const string TAG = nameof(MessageReceivedAction);
 
         private readonly ConcurrentDictionary<string, ReceavedActionModel> _actions;
-        private readonly ILoggerService _loggerService;
+        private readonly ILogger _logger;
 
-        public MessageReceivedAction(ILoggerService loggerService)
+        public MessageReceivedAction()
         {
-            _loggerService = loggerService;
+            _logger = LogManager.GetLogger(TAG);
             _actions = new ConcurrentDictionary<string, ReceavedActionModel>();
 
             Configure("/help", "supported command", (bot, message) => Usage(bot, message));
@@ -36,9 +34,9 @@ namespace TelegramBotService
             }
 
             if (_actions.TryAdd(message, new ReceavedActionModel(comment, customCallBack)))
-                _loggerService.SendLog(LogLevel.Info, TAG, () => $"{message} registered.");
+                _logger.Info(() => $"{message} registered.");
             else
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{message} doesn't register.");
+                _logger.Warn(() => $"{message} doesn't register.");
         }
 
         public void Execute(ITelegramBotClient botClient, Message message)
@@ -51,20 +49,20 @@ namespace TelegramBotService
             if (_actions.TryGetValue(text, out var callBack))
             {
                 callBack.Action(botClient, message);
-                _loggerService.SendLog(LogLevel.Debug, TAG, () => $"{message} called.");
+                _logger.Debug(() => $"{message} called.");
             }
             else
             {
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{message} doesn't find.");
+                _logger.Warn(() => $"{message} doesn't find.");
             }
         }
 
         internal void Configure(string message, string comment, Action<ITelegramBotClient, Message> callBack)
         {
             if (_actions.TryAdd(message, new ReceavedActionModel(comment, callBack)))
-                _loggerService.SendLog(LogLevel.Info, TAG, () => $"{message} registered.");
+                _logger.Debug(() => $"{message} registered.");
             else
-                _loggerService.SendLog(LogLevel.Warning, TAG, () => $"{message} doesn't register.");
+                _logger.Warn(() => $"{message} doesn't register.");
         }
 
         private async Task<Message> Usage(ITelegramBotClient botClient, Message message)

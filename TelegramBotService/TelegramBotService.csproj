@@ -6,15 +6,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Common.DatabaseProject\Common.DatabaseProject.csproj"/>
-        <ProjectReference Include="..\Core.Customer\Core.Customer.csproj"/>
-        <ProjectReference Include="..\Core.Daemon\Core.Daemon.csproj"/>
-        <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj"/>
+        <ProjectReference Include="..\Common.DatabaseProject\Common.DatabaseProject.csproj" />
+        <ProjectReference Include="..\Core.Customer\Core.Customer.csproj" />
+        <ProjectReference Include="..\Core.Daemon\Core.Daemon.csproj" />
+        <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Telegram.Bot" Version="17.0.0"/>
-        <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="1.0.2"/>
+        <PackageReference Include="Telegram.Bot" Version="17.0.0" />
+        <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="1.0.2" />
     </ItemGroup>
 
 </Project>

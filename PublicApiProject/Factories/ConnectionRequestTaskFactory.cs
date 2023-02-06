@@ -8,12 +8,12 @@ namespace PublicProject.Factories
 {
     public class ConnectionRequestTaskFactory : IConnectionRequestTaskFactory
     {
-        private readonly ApiController _apiController;
+        private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly IConnectionStateManager _connectionStateManager;
 
         public ConnectionRequestTaskFactory(IConnectionStateManager connectionStateManager,
-            ApiController apiController,
+            IApiController apiController,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor)
         {
             _connectionStateManager = connectionStateManager;

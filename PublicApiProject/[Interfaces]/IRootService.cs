@@ -1,5 +1,4 @@
-﻿using Core.Publisher;
-using Core.Publisher._Interfaces_;
+﻿using Core.Publisher._Interfaces_;
 
 namespace PublicProject._Interfaces_
 {

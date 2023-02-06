@@ -9,7 +9,7 @@ namespace PublicProject.Logic
 {
     public class ConnectionRequestTask
     {
-        private readonly ApiController _apiController;
+        private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly IConnectionStateManager _connectionStateManager;
         private readonly HttpRequestEventModel _httpRequestEventModel;
@@ -20,7 +20,7 @@ namespace PublicProject.Logic
             HttpRequestEventModel httpRequestEventModel,
             IConnectionStateManager connectionStateManager,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
-            ApiController apiController)
+            IApiController apiController)
         {
             _login = login;
             _httpRequestEventModel = httpRequestEventModel;

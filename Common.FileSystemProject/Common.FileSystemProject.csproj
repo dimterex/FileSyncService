@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Core.Logger\Core.Logger.csproj"/>
+      <PackageReference Include="NLog" Version="5.1.1" />
     </ItemGroup>
 
 </Project>

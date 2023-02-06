@@ -20,6 +20,8 @@ namespace Common.DatabaseProject
         public DbSet<User> Users { get; set; }
 
         public DbSet<SyncState> SyncStates { get; set; }
+        
+        public DbSet<HistoryDto> History { get; set; }
 
         public void ApplyChanges()
         {

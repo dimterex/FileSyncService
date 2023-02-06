@@ -2,8 +2,6 @@
 using Common.DatabaseProject;
 using Common.DatabaseProject._Interfaces_;
 using Core.Daemon;
-using Core.Logger;
-using Core.Logger._Interfaces_;
 using FileSystemProject;
 using Microsoft.Extensions.DependencyInjection;
 using PublicProject;
@@ -20,7 +18,6 @@ namespace PublicApiProject
 {
     internal class Program
     {
-        public const string TAG = nameof(PublicApiProject);
         public const string RABBIT_HOST = "RABBIT_HOST";
         private const string DB_PATH = "DB_PATH";
 
@@ -34,7 +31,6 @@ namespace PublicApiProject
             daemon.Run(() =>
             {
                 var services = new ServiceCollection();
-                services.AddSingleton<ILoggerService, LoggerService>();
                 services.AddSingleton<IConnectionStateManager, ConnectionStateManager>();
                 services.AddSingleton<IFileSystemService, FileSystemService>();
                 services.AddSingleton<IFileManager, FileManager>();
@@ -43,11 +39,12 @@ namespace PublicApiProject
                 services.AddSingleton<IConnectionRequestTaskFactory, ConnectionRequestTaskFactory>();
                 services.AddSingleton<ISyncStateFilesResponseService, SyncStateFilesResponseService>();
                 services.AddSingleton<IRootService, RootService>();
+                services.AddSingleton<IHistoryService, HistoryService>();
 
                 var dbPath = Environment.GetEnvironmentVariable(DB_PATH);
                 services.AddSingleton<IDataBaseFactory>(new DataBaseFactory(dbPath));
 
-                services.AddSingleton<ApiController>();
+                services.AddSingleton<IApiController, ApiController>();
                 services.AddSingleton<AvailableFoldersForUserRequestExecutor>();
                 services.AddSingleton<SyncStatesRequestExecutor>();
                 services.AddSingleton<AddNewStatesExecutor>();
@@ -62,7 +59,7 @@ namespace PublicApiProject
                 services.AddSingleton<CoreModule>();
                 services.AddSingleton<FilesModule>();
                 services.AddSingleton<ConfigurationModule>();
-
+                services.AddSingleton<HistoryModule>();
 
                 services.AddSingleton<IFilesComparing, ClientAddFiles>();
                 services.AddSingleton<IFilesComparing, ClientRemoveFiles>();
@@ -76,6 +73,7 @@ namespace PublicApiProject
                 serviceProvider.GetService<CoreModule>();
                 serviceProvider.GetService<FilesModule>();
                 serviceProvider.GetService<ConfigurationModule>();
+                serviceProvider.GetService<HistoryModule>();
 
                 rootService.Start(HTTP_PORT, HTTPS_PORT);
             });

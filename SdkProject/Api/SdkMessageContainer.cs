@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-
-namespace SdkProject.Api
+﻿namespace SdkProject.Api
 {
+    using Newtonsoft.Json;
+
     public class SdkMessageContainer
     {
         #region Methods
@@ -15,9 +15,11 @@ namespace SdkProject.Api
 
         #region Properties
 
-        [JsonProperty(PropertyName = "Type")] public string Identifier { get; set; }
+        [JsonProperty(PropertyName = "Type")]
+        public string Identifier { get; set; }
 
-        [JsonProperty(PropertyName = "Value")] public object Value { get; set; }
+        [JsonProperty(PropertyName = "Value")]
+        public object Value { get; set; }
 
         #endregion Properties
     }

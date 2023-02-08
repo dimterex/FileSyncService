@@ -1,15 +1,15 @@
-using Newtonsoft.Json;
-
-namespace SdkProject.Api.History
+namespace ServicesApi.History
 {
-    public class HistoryModel
+    using Newtonsoft.Json;
+
+    public class HistoryDto
     {
         [JsonProperty(PropertyName = "id")]
         public int Id { get; set; }
-        
+
         [JsonProperty(PropertyName = "login")]
         public string Login { get; set; }
-        
+
         [JsonProperty(PropertyName = "timestamp")]
         public string TimeStamp { get; set; }
 

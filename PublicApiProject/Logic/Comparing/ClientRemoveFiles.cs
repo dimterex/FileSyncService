@@ -1,24 +1,34 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject.Helper;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic.Comparing
+﻿namespace PublicProject.Logic.Comparing
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using _Interfaces_;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using SdkProject.Api.Sync;
+
+    /// <summary>
+    /// Device remove files
+    /// </summary>
     public class ClientRemoveFiles : IFilesComparing
     {
-        public void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
-            IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
+        public void Apply(
+            SyncStateFilesResponse response,
+            IList<FileInfoModel> deviceFolderFiles,
+            IList<string> filesFromDataBase,
+            IList<FileInfoModel> filesFromServer)
         {
-            foreach (var fileFromDataBase in filesFromDataBase)
+            foreach (string fileFromDataBase in filesFromDataBase)
             {
-                var deviceFile = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
+                FileInfoModel deviceFile = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
                 if (deviceFile == null)
                     continue;
 
-                var serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDataBase);
+                FileInfoModel serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDataBase);
                 if (serverPath == null)
                 {
                     var fileRemoveResponse = new FileRemoveResponse();

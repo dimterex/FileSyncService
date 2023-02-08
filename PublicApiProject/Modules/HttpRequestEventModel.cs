@@ -1,7 +1,7 @@
-﻿using WebSocketSharp.Net;
-
-namespace PublicProject.Modules
+﻿namespace PublicProject.Modules
 {
+    using WebSocketSharp.Net;
+
     public class HttpRequestEventModel
     {
         public HttpRequestEventModel(HttpListenerRequest request, HttpListenerResponse response)

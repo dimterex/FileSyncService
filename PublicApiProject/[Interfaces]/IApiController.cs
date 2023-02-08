@@ -1,8 +1,9 @@
-using PublicProject.Modules;
-using SdkProject._Interfaces_;
-
 namespace PublicProject._Interfaces_
 {
+    using Modules;
+
+    using SdkProject._Interfaces_;
+
     public interface IApiController
     {
         void SetErrorResponse(HttpRequestEventModel e);

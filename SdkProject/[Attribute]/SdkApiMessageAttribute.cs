@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace SdkProject._Attribute_
+﻿namespace SdkProject._Attribute_
 {
+    using System;
+
     [AttributeUsage(AttributeTargets.Class)]
     public class SdkApiMessageAttribute : Attribute
     {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using FileSystemProject;
 using NSubstitute;
@@ -18,6 +19,8 @@ namespace TestProject.ExecutableProjectTests
 
         private const string FIRST_FILE_PATH = "File Path";
         private const string SECOND_FILE_PATH = "Second file Path";
+        
+        private const long LAST_MODIFIED_TIMESTAMP = 1; 
 
         [Test]
         public void BuildTest()
@@ -38,7 +41,7 @@ namespace TestProject.ExecutableProjectTests
                 Assert.AreEqual(filesFromDataBase.Count, 2);
                 Assert.AreEqual(filesFromServer.Count, 2);
             });
-            var syncStateFilesResponseFactory = new SyncStateFilesResponseFactory(new[] { testComparing });
+            var syncStateFilesResponseFactory = new SyncStateFilesResponseFactory(new[] { testComparing }, new FileInfoModelFactory());
 
             var databaseFiles = new List<string>
             {
@@ -58,14 +61,13 @@ namespace TestProject.ExecutableProjectTests
             };
 
             var firstServerDictionary = new DictionaryModel(DICTIONARY_PATH);
-            firstServerDictionary.Files.Add(new FileInfoModel(Path.Combine(DICTIONARY_PATH, FIRST_FILE_PATH), 1));
-            firstServerDictionary.Files.Add(new FileInfoModel(Path.Combine(DICTIONARY_PATH, SECOND_FILE_PATH), 1));
+            firstServerDictionary.Files.Add(GetInfoModel(Path.Combine(DICTIONARY_PATH, FIRST_FILE_PATH), 1, LAST_MODIFIED_TIMESTAMP));
+            firstServerDictionary.Files.Add(GetInfoModel(Path.Combine(DICTIONARY_PATH, SECOND_FILE_PATH), 1, LAST_MODIFIED_TIMESTAMP));
 
             var secondServerDictionary = new DictionaryModel(SECOND_DICTIONARY_PATH);
             secondServerDictionary.Files.Add(
-                new FileInfoModel(Path.Combine(SECOND_DICTIONARY_PATH, FIRST_FILE_PATH), 1));
-            secondServerDictionary.Files.Add(new FileInfoModel(Path.Combine(SECOND_DICTIONARY_PATH, SECOND_FILE_PATH),
-                1));
+                GetInfoModel(Path.Combine(SECOND_DICTIONARY_PATH, FIRST_FILE_PATH), 1, LAST_MODIFIED_TIMESTAMP));
+            secondServerDictionary.Files.Add(GetInfoModel(Path.Combine(SECOND_DICTIONARY_PATH, SECOND_FILE_PATH), 1, LAST_MODIFIED_TIMESTAMP));
 
             var serverDictionaries = new List<DictionaryModel>
             {
@@ -73,6 +75,11 @@ namespace TestProject.ExecutableProjectTests
             };
 
             syncStateFilesResponseFactory.Build(databaseFiles, deviceFolders, serverDictionaries);
+        }
+        
+        private FileInfoModel GetInfoModel(string path, long size, long lastWriteTimeUtc)
+        {
+            return new FileInfoModel(path, size, new DateTime(lastWriteTimeUtc));
         }
     }
 }

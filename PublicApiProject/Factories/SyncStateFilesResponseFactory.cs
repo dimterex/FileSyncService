@@ -1,37 +1,44 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject._Interfaces_.Factories;
-using PublicProject.Helper;
-using SdkProject.Api.Sync;
-using SdkProject.Api.Sync.Common;
-
-namespace PublicProject.Factories
+﻿namespace PublicProject.Factories
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using _Interfaces_;
+    using _Interfaces_.Factories;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using SdkProject.Api.Sync;
+    using SdkProject.Api.Sync.Common;
+
     public class SyncStateFilesResponseFactory : ISyncStateFilesResponseFactory
     {
         private readonly IEnumerable<IFilesComparing> _fileComparings;
+        private readonly IFileInfoModelFactory _fileInfoModelFactory;
 
-        public SyncStateFilesResponseFactory(IEnumerable<IFilesComparing> fileComparings)
+        public SyncStateFilesResponseFactory(IEnumerable<IFilesComparing> fileComparings, IFileInfoModelFactory fileInfoModelFactory)
         {
             _fileComparings = fileComparings;
+            _fileInfoModelFactory = fileInfoModelFactory;
         }
 
-        public SyncStateFilesResponse Build(IList<string> databaseFiles, IList<FolderItem> deviceFolders,
-            IList<DictionaryModel> serverDictionaries)
+        public SyncStateFilesResponse Build(IList<string> databaseFiles, IList<FolderItem> deviceFolders, IList<DictionaryModel> serverDictionaries)
         {
             var response = new SyncStateFilesResponse();
 
-            var deviceFiles = deviceFolders.Select(Convert).ToList();
+            List<DictionaryModel> deviceFiles = deviceFolders.Select(Convert).ToList();
 
-            foreach (var deviceFolder in deviceFiles)
-            foreach (var filesComparing in _fileComparings.ToList())
+            foreach (DictionaryModel deviceFolder in deviceFiles)
             {
-                var dataBaseFiles = databaseFiles.Where(x => x.StartsWith(deviceFolder.Path)).ToList();
-                var serverFiles = serverDictionaries.FirstOrDefault(x => x.Path == deviceFolder.Path);
+                foreach (IFilesComparing filesComparing in _fileComparings.ToList())
+                {
+                    List<string> dataBaseFiles = databaseFiles.Where(x => x.StartsWith(deviceFolder.Path)).ToList();
+                    DictionaryModel serverFiles = serverDictionaries.FirstOrDefault(x => x.Path == deviceFolder.Path);
 
-                filesComparing.Apply(response, deviceFolder.Files, dataBaseFiles, serverFiles?.Files);
+                    filesComparing.Apply(response, deviceFolder.Files, dataBaseFiles, serverFiles?.Files);
+                }
             }
 
             return response;
@@ -40,10 +47,11 @@ namespace PublicProject.Factories
         private DictionaryModel Convert(FolderItem folderItem)
         {
             var dictionaryModel = new DictionaryModel(PathHelper.GetRawPath(folderItem.DictionaryPath));
-            foreach (var fileItem in folderItem.Files)
+            foreach (FileItem fileItem in folderItem.Files)
             {
-                var rawPath = PathHelper.GetRawPath(fileItem.Path);
-                dictionaryModel.Files.Add(new FileInfoModel(rawPath, fileItem.Size));
+                string rawPath = PathHelper.GetRawPath(fileItem.Path);
+                FileInfoModel model = _fileInfoModelFactory.Create(rawPath, fileItem.Size, fileItem.Timestamp);
+                dictionaryModel.Files.Add(model);
             }
 
             return dictionaryModel;

@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace FileSystemProject
+﻿namespace FileSystemProject
 {
+    using System.Collections.Generic;
+
     public interface IFileSystemService
     {
         IList<string> GetDirectories(string path);

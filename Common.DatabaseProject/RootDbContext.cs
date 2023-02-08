@@ -1,10 +1,13 @@
-﻿using System.IO;
-using Common.DatabaseProject._Interfaces_;
-using Common.DatabaseProject.Dto;
-using Microsoft.EntityFrameworkCore;
-
-namespace Common.DatabaseProject
+﻿namespace Common.DatabaseProject
 {
+    using System.IO;
+
+    using _Interfaces_;
+
+    using Dto;
+
+    using Microsoft.EntityFrameworkCore;
+
     internal class RootDbContext : DbContext, IDataBaseContext
     {
         private const string DB_NAME = "sync_service.db";
@@ -20,7 +23,7 @@ namespace Common.DatabaseProject
         public DbSet<User> Users { get; set; }
 
         public DbSet<SyncState> SyncStates { get; set; }
-        
+
         public DbSet<HistoryDto> History { get; set; }
 
         public void ApplyChanges()

@@ -1,19 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Net;
-using Newtonsoft.Json;
-using PublicProject._Interfaces_;
-using PublicProject.Modules;
-using SdkProject;
-using SdkProject._Interfaces_;
-using SdkProject.Api;
-using SdkProject.Api.Sync;
-
-namespace PublicProject
+﻿namespace PublicProject
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.Specialized;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+
+    using _Interfaces_;
+
+    using Modules;
+
+    using Newtonsoft.Json;
+
+    using SdkProject;
+    using SdkProject._Interfaces_;
+    using SdkProject.Api;
+    using SdkProject.Api.Sync;
+
     public abstract class BaseApiModule
     {
         #region Events
@@ -61,34 +65,35 @@ namespace PublicProject
             const string request = "request";
 
             _apiController.RegisterRequest(request, this);
-            _restMethods.Add($"{"POST"} {Version.Major}/{request}", e =>
-            {
-                var data = DeserializeFromStream(e.Request.InputStream).ToString();
-
-                var messages = JsonConvert.DeserializeObject<SdkMessageContainer[]>(data);
-                foreach (var message in messages)
+            _restMethods.Add(
+                $"{"POST"} {Version.Major}/{request}",
+                e =>
                 {
-                    var payload = _sdkPacketSerializer.Deserialize(message);
+                    var data = DeserializeFromStream(e.Request.InputStream).ToString();
 
-                    var type = payload.GetType();
+                    SdkMessageContainer[] messages = JsonConvert.DeserializeObject<SdkMessageContainer[]>(data);
+                    foreach (SdkMessageContainer message in messages)
+                    {
+                        ISdkMessage payload = _sdkPacketSerializer.Deserialize(message);
 
-                    if (!_restRequestMethods.TryGetValue(type, out var method))
-                        return;
+                        Type type = payload.GetType();
 
-                    method(DeserializeRequest<SyncFilesRequest>(e.Request.QueryString), payload, e);
-                }
-            });
+                        if (!_restRequestMethods.TryGetValue(type, out Action<ISdkMessage, ISdkMessage, HttpRequestEventModel> method))
+                            return;
+
+                        method(DeserializeRequest<SyncFilesRequest>(e.Request.QueryString), payload, e);
+                    }
+                });
 
             OnInitialize();
         }
 
         public void Handle(string resource, HttpRequestEventModel e)
         {
-            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out var method))
+            if (!_restMethods.TryGetValue($"{e.Request.HttpMethod} {resource}", out Action<HttpRequestEventModel> method))
             {
                 e.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                e.Response.StatusDescription =
-                    $"Unknown {e.Request.HttpMethod}-method '{resource}' or module '{Name}'.";
+                e.Response.StatusDescription = $"Unknown {e.Request.HttpMethod}-method '{resource}' or module '{Name}'.";
                 return;
             }
 
@@ -98,8 +103,7 @@ namespace PublicProject
         private static T DeserializeRequest<T>(NameValueCollection query)
         {
             return JsonConvert.DeserializeObject<T>(
-                JsonConvert.SerializeObject(
-                    query.Cast<string>().ToDictionary(key => key, value => query[value])));
+                JsonConvert.SerializeObject(query.Cast<string>().ToDictionary(key => key, value => query[value])));
         }
 
         private static object DeserializeFromStream(Stream stream)
@@ -128,19 +132,16 @@ namespace PublicProject
         private void RegisterRequest<T>(string httpMethod, string resourceName, Action<T, HttpRequestEventModel> method)
         {
             _apiController.RegisterRequest(resourceName, this);
-            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}",
-                e => method(DeserializeRequest<T>(e.Request.QueryString), e));
+            _restMethods.Add($"{httpMethod} {Version.Major}/{resourceName}", e => method(DeserializeRequest<T>(e.Request.QueryString), e));
         }
 
         /// <summary>
-        ///     Регистрирует обработчик REST POST-запроса.
+        /// Регистрирует обработчик REST POST-запроса.
         /// </summary>
-        /// <param name="method">Метод для обработки запроса.</param>
-        protected void RegisterPostRequestWithBody<TResponse>(
-            Action<SyncFilesRequest, TResponse, HttpRequestEventModel> method)
+        /// <param name = "method">Метод для обработки запроса.</param>
+        protected void RegisterPostRequestWithBody<TResponse>(Action<SyncFilesRequest, TResponse, HttpRequestEventModel> method)
         {
-            _restRequestMethods.Add(typeof(TResponse),
-                (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
+            _restRequestMethods.Add(typeof(TResponse), (request, response, e) => method((SyncFilesRequest)request, (TResponse)response, e));
         }
 
         protected virtual void OnInitialize()

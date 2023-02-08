@@ -1,28 +1,30 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using NLog;
-
-namespace FileSystemProject
+﻿namespace FileSystemProject
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+
+    using NLog;
+
     public class FileManager : IFileManager
     {
         private const string TAG = nameof(FileManager);
+        private readonly IFileInfoModelFactory _fileInfoModelFactory;
         private readonly IFileSystemService _fileSystemService;
         private readonly ILogger _logger;
 
-        public FileManager(IFileSystemService fileSystemService)
+        public FileManager(IFileSystemService fileSystemService, IFileInfoModelFactory fileInfoModelFactory)
         {
             _fileSystemService = fileSystemService;
+            _fileInfoModelFactory = fileInfoModelFactory;
             _logger = LogManager.GetLogger(TAG);
         }
 
         public IList<FileInfoModel> GetFiles(string folderPath)
         {
-            var ls = GetFileData(folderPath);
+            IList<FileInfo> ls = GetFileData(folderPath);
 
-            var result = ls.OrderBy(info => info.LastWriteTime)
-                .Select(info => new FileInfoModel(info.FullName, info.Length)).ToList();
+            List<FileInfoModel> result = ls.OrderBy(info => info.LastWriteTimeUtc).Select(info => _fileInfoModelFactory.Create(info)).ToList();
 
             return result;
         }
@@ -37,7 +39,7 @@ namespace FileSystemProject
         {
             var result = new List<string>();
 
-            foreach (var directory in directories)
+            foreach (string directory in directories)
             {
                 if (string.IsNullOrWhiteSpace(directory))
                     continue;
@@ -47,6 +49,11 @@ namespace FileSystemProject
             return result;
         }
 
+        public FileInfoModel GetFileInfo(string path)
+        {
+            return _fileInfoModelFactory.Create(new FileInfo(path));
+        }
+
         private IList<FileInfo> GetFileData(string folderPath)
         {
             var ls = new List<FileInfo>();
@@ -54,23 +61,26 @@ namespace FileSystemProject
             if (string.IsNullOrEmpty(folderPath))
                 return ls;
 
-            var directories = _fileSystemService.GetDirectories(folderPath);
-            var files = _fileSystemService.GetFiles(folderPath);
+            IList<string> directories = _fileSystemService.GetDirectories(folderPath);
+            IList<string> files = _fileSystemService.GetFiles(folderPath);
 
-            foreach (var file in files)
+            foreach (string file in files)
             {
                 var fileInfo = new FileInfo(file);
                 ls.Add(fileInfo);
             }
 
-            foreach (var folder in directories) ls.AddRange(GetFileData(folder));
+            foreach (string folder in directories)
+            {
+                ls.AddRange(GetFileData(folder));
+            }
 
             return ls;
         }
 
         private void processDirectory(string startLocation, IList<string> directories)
         {
-            foreach (var directory in Directory.GetDirectories(startLocation))
+            foreach (string directory in Directory.GetDirectories(startLocation))
             {
                 processDirectory(directory, directories);
                 if (Directory.GetFiles(directory).Length != 0)

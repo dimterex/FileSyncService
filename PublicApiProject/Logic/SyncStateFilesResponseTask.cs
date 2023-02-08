@@ -1,19 +1,25 @@
-﻿using System.Collections.Generic;
-using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject._Interfaces_.Factories;
-using PublicProject.Database.Actions.States;
-using PublicProject.Database.Actions.Users;
-using PublicProject.Modules;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic
+﻿namespace PublicProject.Logic
 {
+    using System.Collections.Generic;
+
+    using _Interfaces_;
+    using _Interfaces_.Factories;
+
+    using Database.Actions.States;
+    using Database.Actions.Users;
+
+    using FileSystemProject;
+
+    using Modules;
+
+    using SdkProject.Api.Sync;
+
     public class SyncStateFilesResponseTask
     {
         private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly SyncStateFilesBodyRequest _bodyRequest;
+        private readonly IFileInfoModelFactory _fileInfoModelFactory;
         private readonly IFileManager _fileManager;
         private readonly HttpRequestEventModel _httpRequestEventModel;
         private readonly string _login;
@@ -22,7 +28,8 @@ namespace PublicProject.Logic
         private readonly SyncStatesRequestExecutor _syncStatesRequestExecutor;
         private readonly string _token;
 
-        public SyncStateFilesResponseTask(string login,
+        public SyncStateFilesResponseTask(
+            string login,
             string token,
             SyncStateFilesBodyRequest bodyRequest,
             HttpRequestEventModel httpRequestEventModel,
@@ -30,6 +37,7 @@ namespace PublicProject.Logic
             ISyncStateFilesResponseService syncStateFilesResponseService,
             IApiController apiController,
             ISyncStateFilesResponseFactory syncStateFilesResponseFactory,
+            IFileInfoModelFactory fileInfoModelFactory,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
             SyncStatesRequestExecutor syncStatesRequestExecutor)
         {
@@ -41,27 +49,30 @@ namespace PublicProject.Logic
             _syncStateFilesResponseService = syncStateFilesResponseService;
             _apiController = apiController;
             _syncStateFilesResponseFactory = syncStateFilesResponseFactory;
+            _fileInfoModelFactory = fileInfoModelFactory;
             _availableFoldersForUserRequestExecutor = availableFoldersForUserRequestExecutor;
             _syncStatesRequestExecutor = syncStatesRequestExecutor;
         }
 
         public void Run()
         {
-            var availableFolders = _availableFoldersForUserRequestExecutor.Handler(_login);
-            var syncStates = _syncStatesRequestExecutor.Handler(_login);
+            IList<string> availableFolders = _availableFoldersForUserRequestExecutor.Handler(_login);
+            IList<string> syncStates = _syncStatesRequestExecutor.Handler(_login);
 
             var serverFiles = new List<DictionaryModel>();
-            foreach (var folder in availableFolders)
+            foreach (string folder in availableFolders)
             {
                 var dictModel = new DictionaryModel(folder);
                 serverFiles.Add(dictModel);
-                var rootFiles = _fileManager.GetFiles(folder);
+                IList<FileInfoModel> rootFiles = _fileManager.GetFiles(folder);
 
-                foreach (var fileInfoModel in rootFiles)
-                    dictModel.Files.Add(new FileInfoModel(fileInfoModel.Path, fileInfoModel.Size));
+                foreach (FileInfoModel fileInfoModel in rootFiles)
+                {
+                    dictModel.Files.Add(fileInfoModel);
+                }
             }
 
-            var response = _syncStateFilesResponseFactory.Build(syncStates, _bodyRequest.Folders, serverFiles);
+            SyncStateFilesResponse response = _syncStateFilesResponseFactory.Build(syncStates, _bodyRequest.Folders, serverFiles);
 
             _syncStateFilesResponseService.Remove(_login, _token);
             _syncStateFilesResponseService.Add(_login, _token, response);

@@ -1,23 +1,23 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-
-namespace Common.DatabaseProject.Dto
+﻿namespace Common.DatabaseProject.Dto
 {
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
+    using System.Linq;
+
     [Table("users")]
     public class User
     {
         private const char FOLDER_SEPARATOR = ',';
 
         [Column("user_id")]
-        [Key] 
+        [Key]
         public int UserId { get; set; }
 
-        [Column("login")] 
+        [Column("login")]
         public string Login { get; set; }
 
-        [Column("password")] 
+        [Column("password")]
         public string Password { get; set; }
 
         [Column("available_folders")]
@@ -27,7 +27,7 @@ namespace Common.DatabaseProject.Dto
             set => AvailableFolders = value.Split(FOLDER_SEPARATOR).ToList();
         }
 
-        [NotMapped] 
+        [NotMapped]
         public List<string> AvailableFolders { get; set; }
     }
 }

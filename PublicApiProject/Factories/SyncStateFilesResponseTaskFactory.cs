@@ -1,18 +1,24 @@
-﻿using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject._Interfaces_.Factories;
-using PublicProject.Database.Actions.States;
-using PublicProject.Database.Actions.Users;
-using PublicProject.Logic;
-using PublicProject.Modules;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Factories
+﻿namespace PublicProject.Factories
 {
+    using _Interfaces_;
+    using _Interfaces_.Factories;
+
+    using Database.Actions.States;
+    using Database.Actions.Users;
+
+    using FileSystemProject;
+
+    using Logic;
+
+    using Modules;
+
+    using SdkProject.Api.Sync;
+
     public class SyncStateFilesResponseTaskFactory : ISyncStateFilesResponseTaskFactory
     {
         private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
+        private readonly IFileInfoModelFactory _fileInfoModelFactory;
         private readonly IFileManager _fileManager;
         private readonly ISyncStateFilesResponseFactory _syncStateFilesResponseFactory;
         private readonly ISyncStateFilesResponseService _syncStateFilesResponseService;
@@ -20,6 +26,7 @@ namespace PublicProject.Factories
 
         public SyncStateFilesResponseTaskFactory(
             IFileManager fileManager,
+            IFileInfoModelFactory fileInfoModelFactory,
             ISyncStateFilesResponseService syncStateFilesResponseService,
             IApiController apiController,
             ISyncStateFilesResponseFactory syncStateFilesResponseFactory,
@@ -27,6 +34,7 @@ namespace PublicProject.Factories
             SyncStatesRequestExecutor syncStatesRequestExecutor)
         {
             _fileManager = fileManager;
+            _fileInfoModelFactory = fileInfoModelFactory;
             _syncStateFilesResponseService = syncStateFilesResponseService;
             _apiController = apiController;
             _syncStateFilesResponseFactory = syncStateFilesResponseFactory;
@@ -34,13 +42,18 @@ namespace PublicProject.Factories
             _syncStatesRequestExecutor = syncStatesRequestExecutor;
         }
 
-        public SyncStateFilesResponseTask Create(string login, string token, SyncStateFilesBodyRequest bodyRequest,
-            HttpRequestEventModel e)
+        public SyncStateFilesResponseTask Create(string login, string token, SyncStateFilesBodyRequest bodyRequest, HttpRequestEventModel e)
         {
-            return new SyncStateFilesResponseTask(login, token, bodyRequest, e,
-                _fileManager, _syncStateFilesResponseService,
+            return new SyncStateFilesResponseTask(
+                login,
+                token,
+                bodyRequest,
+                e,
+                _fileManager,
+                _syncStateFilesResponseService,
                 _apiController,
                 _syncStateFilesResponseFactory,
+                _fileInfoModelFactory,
                 _availableFoldersForUserRequestExecutor,
                 _syncStatesRequestExecutor);
         }

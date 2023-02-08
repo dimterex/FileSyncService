@@ -1,12 +1,15 @@
-﻿using System.Collections.Concurrent;
-using NLog;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
-using TelegramBotService._Interfaces_;
-
-namespace TelegramBotService
+﻿namespace TelegramBotService
 {
+    using System.Collections.Concurrent;
+
+    using _Interfaces_;
+
+    using NLog;
+
+    using Telegram.Bot;
+    using Telegram.Bot.Types;
+    using Telegram.Bot.Types.Enums;
+
     public class ActionsService
     {
         private const string TAG = nameof(ActionsService);
@@ -23,7 +26,7 @@ namespace TelegramBotService
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
         {
-            if (_actions.TryGetValue(update.Type, out var action))
+            if (_actions.TryGetValue(update.Type, out IReceivedAction action))
                 action.Execute(botClient, update.Message ?? update.EditedMessage);
             else
                 _logger.Warn(() => $"{update.Type} doesn't supported.");
@@ -31,7 +34,7 @@ namespace TelegramBotService
 
         public void Configure(string message, string comment, ITelegramCommand callback)
         {
-            if (_actions.TryGetValue(UpdateType.Message, out var action))
+            if (_actions.TryGetValue(UpdateType.Message, out IReceivedAction action))
                 action.Configure(message, comment, callback);
             else
                 _logger.Warn(() => $"{UpdateType.Message} doesn't supported.");

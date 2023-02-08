@@ -11,6 +11,15 @@
     [SdkApiMessage("connection_response")]
     public class ConnectionResponse : ISdkMessage
     {
+        #region Constructors
+
+        public ConnectionResponse()
+        {
+            Shared_folders = new List<SharedFolder>();
+        }
+
+        #endregion
+
         #region Properties
 
         [JsonProperty(PropertyName = "token")]
@@ -18,15 +27,6 @@
 
         [JsonProperty(PropertyName = "shared_folders")]
         public List<SharedFolder> Shared_folders { get; set; }
-
-        #endregion
-
-        #region Constructors
-
-        public ConnectionResponse()
-        {
-            Shared_folders = new List<SharedFolder>();
-        }
 
         #endregion
     }

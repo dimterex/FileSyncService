@@ -1,9 +1,11 @@
-﻿using System.Linq;
-using Common.DatabaseProject._Interfaces_;
-using Common.DatabaseProject.Dto;
-
-namespace PublicProject.Database.Actions.States
+﻿namespace PublicProject.Database.Actions.States
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using Common.DatabaseProject._Interfaces_;
+    using Common.DatabaseProject.Dto;
+
     public class AddNewStatesExecutor
     {
         private readonly IDataBaseFactory _dataBaseFactory;
@@ -15,9 +17,9 @@ namespace PublicProject.Database.Actions.States
 
         public void Handler(string login, string[] filePaths)
         {
-            using (var dataBase = _dataBaseFactory.Create())
+            using (IDataBaseContext dataBase = _dataBaseFactory.Create())
             {
-                foreach (var filePath in filePaths)
+                foreach (string filePath in filePaths)
                 {
                     AddSyncState(login, filePath, dataBase);
                 }
@@ -28,8 +30,7 @@ namespace PublicProject.Database.Actions.States
 
         private void AddSyncState(string login, string filePath, IDataBaseContext dataBase)
         {
-            var syncStates = dataBase.SyncStates.ToList().Where(x => x.Login == login && x.FilePath == filePath)
-                .ToList();
+            List<SyncState> syncStates = dataBase.SyncStates.ToList().Where(x => x.Login == login && x.FilePath == filePath).ToList();
 
             if (syncStates.Any())
                 return;

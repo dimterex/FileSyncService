@@ -1,9 +1,9 @@
-﻿using ServicesApi.Common._Interfaces_;
-
-namespace Core.Publisher._Interfaces_
+﻿namespace Core.Publisher._Interfaces_
 {
+    using ServicesApi.Common._Interfaces_;
+
     public interface IPublisherService
     {
-        void SendMessage(IMessage message);
+        IMessage CallAsync(string queue, IMessage message);
     }
 }

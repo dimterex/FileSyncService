@@ -1,16 +1,20 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Text;
-using System.Threading.Tasks;
-using NLog;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBotService._Interfaces_;
-
-namespace TelegramBotService
+﻿namespace TelegramBotService
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Threading.Tasks;
+
+    using _Interfaces_;
+
+    using NLog;
+
+    using Telegram.Bot;
+    using Telegram.Bot.Types;
+    using Telegram.Bot.Types.Enums;
+    using Telegram.Bot.Types.ReplyMarkups;
+
     public class MessageReceivedAction : IReceivedAction
     {
         private const string TAG = nameof(MessageReceivedAction);
@@ -44,9 +48,9 @@ namespace TelegramBotService
             if (message.Type != MessageType.Text)
                 return;
 
-            var text = message.Text!.Split(' ')[0];
+            string text = message.Text!.Split(' ')[0];
 
-            if (_actions.TryGetValue(text, out var callBack))
+            if (_actions.TryGetValue(text, out ReceavedActionModel callBack))
             {
                 callBack.Action(botClient, message);
                 _logger.Debug(() => $"{message} called.");
@@ -69,12 +73,12 @@ namespace TelegramBotService
         {
             var sb = new StringBuilder();
             sb.AppendLine("Usage:");
-            foreach (var receavedActionModel in _actions)
+            foreach (KeyValuePair<string, ReceavedActionModel> receavedActionModel in _actions)
+            {
                 sb.AppendLine($"{receavedActionModel.Key} - {receavedActionModel.Value.Comment}");
+            }
 
-            return await botClient.SendTextMessageAsync(message.Chat.Id,
-                sb.ToString(),
-                replyMarkup: new ReplyKeyboardRemove());
+            return await botClient.SendTextMessageAsync(message.Chat.Id, sb.ToString(), replyMarkup: new ReplyKeyboardRemove());
         }
     }
 }

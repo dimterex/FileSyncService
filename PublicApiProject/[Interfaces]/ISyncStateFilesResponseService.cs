@@ -1,7 +1,7 @@
-﻿using SdkProject.Api.Sync;
-
-namespace PublicProject._Interfaces_
+﻿namespace PublicProject._Interfaces_
 {
+    using SdkProject.Api.Sync;
+
     public interface ISyncStateFilesResponseService
     {
         SyncStateFilesResponse GetResponse(string fileActionToken);

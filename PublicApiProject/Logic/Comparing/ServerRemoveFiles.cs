@@ -1,30 +1,38 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FileSystemProject;
-using NLog;
-using PublicProject._Interfaces_;
-using PublicProject.Helper;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic.Comparing
+﻿namespace PublicProject.Logic.Comparing
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using _Interfaces_;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using SdkProject.Api.Sync;
+
+    /// <summary>
+    /// Remove file from server, because nobody have it on devices.
+    /// </summary>
     public class ServerRemoveFiles : IFilesComparing
     {
-
-        public void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
-            IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
+        public void Apply(
+            SyncStateFilesResponse response,
+            IList<FileInfoModel> deviceFolderFiles,
+            IList<string> filesFromDataBase,
+            IList<FileInfoModel> filesFromServer)
         {
-            foreach (var fileFromDataBase in filesFromDataBase)
+            foreach (string fileFromDataBase in filesFromDataBase)
             {
-                foreach (var fileFromServer in filesFromServer)
+                foreach (FileInfoModel fileFromServer in filesFromServer)
                 {
                     if (fileFromServer.Path != fileFromDataBase)
                         continue;
 
-                    var devicePath = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
+                    FileInfoModel devicePath = deviceFolderFiles.FirstOrDefault(x => x.Path == fileFromDataBase);
                     if (devicePath != null)
                         continue;
-                    
+
                     var fileUpdatedResponse = new FileServerRemovedResponse();
                     fileUpdatedResponse.FileName = PathHelper.GetListOfPath(fileFromServer.Path);
                     response.ServerRemovedFiles.Add(fileUpdatedResponse);

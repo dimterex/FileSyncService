@@ -9,6 +9,15 @@
     [SdkApiMessage("file_updated_response")]
     public class FileUpdatedResponse : ISdkMessage
     {
+        #region Constructors
+
+        public FileUpdatedResponse()
+        {
+            Size = 0;
+        }
+
+        #endregion
+
         #region Properties
 
         [JsonProperty(PropertyName = "file_name")]
@@ -16,15 +25,6 @@
 
         [JsonProperty(PropertyName = "size")]
         public long Size { get; set; }
-
-        #endregion
-
-        #region Constructors
-
-        public FileUpdatedResponse()
-        {
-            Size = 0;
-        }
 
         #endregion
     }

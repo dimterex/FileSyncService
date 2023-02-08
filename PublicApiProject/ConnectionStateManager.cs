@@ -1,8 +1,9 @@
-﻿using System.Collections.Concurrent;
-using PublicProject._Interfaces_;
-
-namespace PublicProject
+﻿namespace PublicProject
 {
+    using System.Collections.Concurrent;
+
+    using _Interfaces_;
+
     public class ConnectionStateManager : IConnectionStateManager
     {
         private readonly ConcurrentDictionary<string, string> _loginToTokenMap;
@@ -22,13 +23,13 @@ namespace PublicProject
 
         public void Remove(string token)
         {
-            if (_tokenToLoginMap.TryRemove(token, out var login))
+            if (_tokenToLoginMap.TryRemove(token, out string login))
                 _loginToTokenMap.TryRemove(login, out _);
         }
 
         public string GetLoginByToken(string token)
         {
-            if (_tokenToLoginMap.TryGetValue(token, out var login))
+            if (_tokenToLoginMap.TryGetValue(token, out string login))
                 return login;
 
             return string.Empty;

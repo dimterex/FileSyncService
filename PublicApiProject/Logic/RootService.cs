@@ -1,30 +1,42 @@
-﻿using System;
-using Core.Customer;
-using Core.Publisher;
-using Core.Publisher._Interfaces_;
-using FileSystemProject;
-using PublicApiProject;
-using PublicProject._Interfaces_;
-using PublicProject.Actions;
-using ServicesApi;
-
-namespace PublicProject.Logic
+﻿namespace PublicProject.Logic
 {
+    using System;
+
+    using _Interfaces_;
+
+    using Actions;
+
+    using Core.Customer;
+    using Core.Publisher;
+    using Core.Publisher._Interfaces_;
+
+    using PublicApiProject;
+
+    using ServicesApi;
+
     public class RootService : IRootService
     {
         private readonly CustomerController _customerController;
         private readonly WsService _wsService;
 
-        public RootService(WsService wsService, IFileManager fileManager)
+        public RootService(
+            WsService wsService,
+            ClearEmptyDirectoriesAction clearEmptyDirectoriesAction,
+            GetHistoryAction getHistoryAction,
+            CreateUserAction createUserAction,
+            UpdateSyncStateAction updateSyncStateAction)
         {
-            var host = Environment.GetEnvironmentVariable(Program.RABBIT_HOST);
+            string host = Environment.GetEnvironmentVariable(Program.RABBIT_HOST);
 
             _wsService = wsService;
 
-            PublisherService = new PublisherService(host);
+            PublisherService = new RpcPublisherService(host);
             _customerController = new CustomerController(host, QueueConstants.FILE_STORAGE_QUEUE);
 
-            _customerController.Configure(new ClearEmptyDirectoriesAction(PublisherService, fileManager));
+            _customerController.Configure(clearEmptyDirectoriesAction);
+            _customerController.Configure(getHistoryAction);
+            _customerController.Configure(createUserAction);
+            _customerController.Configure(updateSyncStateAction);
         }
 
         public IPublisherService PublisherService { get; }

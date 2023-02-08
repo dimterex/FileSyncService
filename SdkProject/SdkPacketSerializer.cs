@@ -1,13 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using Newtonsoft.Json.Linq;
-using SdkProject._Attribute_;
-using SdkProject._Interfaces_;
-using SdkProject.Api;
-
-namespace SdkProject
+﻿namespace SdkProject
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Reflection;
+
+    using _Attribute_;
+
+    using _Interfaces_;
+
+    using Api;
+
+    using Newtonsoft.Json.Linq;
+
     public class SdkPacketSerializer
     {
         #region Constructors
@@ -41,7 +45,7 @@ namespace SdkProject
 
         public ISdkMessage Deserialize(SdkMessageContainer container)
         {
-            if (!_messageDec.TryGetValue(container.Identifier, out var type))
+            if (!_messageDec.TryGetValue(container.Identifier, out Type type))
                 return null;
 
             var message = (ISdkMessage)((JObject)container.Value).ToObject(type);
@@ -51,7 +55,7 @@ namespace SdkProject
 
         private void Initialize(Assembly assembly)
         {
-            foreach (var type in assembly.GetTypes())
+            foreach (Type type in assembly.GetTypes())
             {
                 var attr = type.GetCustomAttribute<SdkApiMessageAttribute>();
                 if (attr == null)

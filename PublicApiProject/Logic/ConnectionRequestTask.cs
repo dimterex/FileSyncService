@@ -1,12 +1,18 @@
-﻿using System;
-using PublicProject._Interfaces_;
-using PublicProject.Database.Actions.Users;
-using PublicProject.Helper;
-using PublicProject.Modules;
-using SdkProject.Api.Connection;
-
-namespace PublicProject.Logic
+﻿namespace PublicProject.Logic
 {
+    using System;
+    using System.Collections.Generic;
+
+    using _Interfaces_;
+
+    using Database.Actions.Users;
+
+    using Helper;
+
+    using Modules;
+
+    using SdkProject.Api.Connection;
+
     public class ConnectionRequestTask
     {
         private readonly IApiController _apiController;
@@ -16,7 +22,8 @@ namespace PublicProject.Logic
         private readonly string _login;
         private readonly Guid _token;
 
-        public ConnectionRequestTask(string login,
+        public ConnectionRequestTask(
+            string login,
             HttpRequestEventModel httpRequestEventModel,
             IConnectionStateManager connectionStateManager,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
@@ -34,14 +41,14 @@ namespace PublicProject.Logic
         {
             _connectionStateManager.Add(_login, _token.ToString());
 
-            var availableFolders = _availableFoldersForUserRequestExecutor.Handler(_login);
+            IList<string> availableFolders = _availableFoldersForUserRequestExecutor.Handler(_login);
 
             var response = new ConnectionResponse
             {
                 Token = _token.ToString()
             };
 
-            foreach (var folder in availableFolders)
+            foreach (string folder in availableFolders)
             {
                 var sharedFolder = new SharedFolder();
                 sharedFolder.Files.AddRange(PathHelper.GetListOfPath(folder));

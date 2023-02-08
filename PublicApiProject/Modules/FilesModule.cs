@@ -1,26 +1,33 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Text;
-using Core.Publisher._Interfaces_;
-using Newtonsoft.Json;
-using NLog;
-using PublicProject._Interfaces_;
-using PublicProject.Database.Actions.States;
-using SdkProject.Api.Files;
-using ServicesApi.Telegram;
-
-namespace PublicProject.Modules
+﻿namespace PublicProject.Modules
 {
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Text;
+
+    using _Interfaces_;
+
+    using Core.Publisher._Interfaces_;
+
+    using Database.Actions.States;
+
+    using Newtonsoft.Json;
+
+    using NLog;
+
+    using SdkProject.Api.Files;
+
     public class FilesModule : BaseApiModule
     {
         #region Constructors
 
-        public FilesModule(IConnectionStateManager connectionStateManager,
+        public FilesModule(
+            IConnectionStateManager connectionStateManager,
             IRootService rootService,
             AddNewStateExecutor addNewStateExecutor,
             IApiController apiController,
-            IHistoryService historyService) : base("files", new Version(0, 1), apiController)
+            IHistoryService historyService)
+            : base("files", new Version(0, 1), apiController)
         {
             _connectionStateManager = connectionStateManager;
             _publisherController = rootService.PublisherService;
@@ -65,7 +72,7 @@ namespace PublicProject.Modules
         {
             _logger.Debug(() => $"Upload {request.FileName}");
 
-            var login = _connectionStateManager.GetLoginByToken(request.Token);
+            string login = _connectionStateManager.GetLoginByToken(request.Token);
 
             var fileCrutch = JsonConvert.DeserializeObject<FileCrutch>(request.FileName);
 
@@ -76,16 +83,25 @@ namespace PublicProject.Modules
                 return;
             }
 
-            var rawPath = GetRawPath(fileCrutch.FileName);
+            string rawPath = GetRawPath(fileCrutch.FileName);
 
-            var isValidRequest = HandleUploadRequest(
-                login,
-                rawPath,
-                e.Request.InputStream,
-                e.Request.ContentLength64,
-                out var response,
-                out var errorStatusCode,
-                out var errorMessage);
+            UploadResponse response = null;
+            var errorStatusCode = HttpStatusCode.RequestTimeout;
+            var errorMessage = string.Empty;
+            var isValidRequest = false;
+
+
+            using (e.Request.InputStream)
+            {
+                isValidRequest = HandleUploadRequest(
+                    login,
+                    rawPath,
+                    e.Request.InputStream,
+                    e.Request.ContentLength64,
+                    out response,
+                    out errorStatusCode,
+                    out errorMessage);
+            }
 
             if (!isValidRequest)
             {
@@ -93,16 +109,14 @@ namespace PublicProject.Modules
                 _logger.Warn(() => errorMessage);
             }
 
-            _publisherController.SendMessage(new TelegramMessage
-            {
-                Message = $"Added from {login}: {request.FileName}"
-            });
-
             e.Response.SendChunked = true;
             using (var streamWriter = new StreamWriter(e.Response.OutputStream, Encoding.UTF8))
             {
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings
-                    { NullValueHandling = NullValueHandling.Ignore });
+                var serializer = JsonSerializer.Create(
+                    new JsonSerializerSettings
+                    {
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
                 var jsonWriter = new JsonTextWriter(streamWriter);
 
                 try
@@ -121,7 +135,7 @@ namespace PublicProject.Modules
             e.Response.SendChunked = true;
 
             _logger.Debug(() => $"Download {request.FilePath}");
-            if (HandleDownloadRequest(request, e.Response.OutputStream, out var errorStatusCode, out var errorMessage))
+            if (HandleDownloadRequest(request, e.Response.OutputStream, out HttpStatusCode errorStatusCode, out string errorMessage))
                 return;
 
             e.Response.StatusCode = (int)errorStatusCode;
@@ -154,16 +168,22 @@ namespace PublicProject.Modules
                 _logger.Info(() => $"Directory {fileInfo.Directory} created.");
             }
 
-            using (var fileStream = File.Create(filePath))
+            using (FileStream fileStream = File.Create(filePath))
             {
                 stream.CopyTo(fileStream);
             }
 
+            if (fileInfo.Length != contentLength)
+            {
+                response.Result = FilesOperationResult.UnexpectedError;
+                errorMessage = "Unable to determine file size";
+                fileInfo.Delete();
+                return false;
+            }
+
             response.Result = FilesOperationResult.Success;
-            // response.FileId = Guid.NewGuid().ToString();
 
             errorStatusCode = HttpStatusCode.OK;
-
 
             _addNewStateExecutor.Handler(login, filePath);
             _historyService.AddNewEvent(login, filePath, "Uploaded");
@@ -186,7 +206,7 @@ namespace PublicProject.Modules
                 return false;
             }
 
-            var rawPath = GetRawPath(fileCrutch.FileName);
+            string rawPath = GetRawPath(fileCrutch.FileName);
             if (string.IsNullOrEmpty(rawPath) || !File.Exists(rawPath))
             {
                 errorStatusCode = HttpStatusCode.NotFound;
@@ -209,7 +229,7 @@ namespace PublicProject.Modules
 
             errorStatusCode = HttpStatusCode.OK;
 
-            var login = _connectionStateManager.GetLoginByToken(request.Token);
+            string login = _connectionStateManager.GetLoginByToken(request.Token);
 
             _addNewStateExecutor.Handler(login, rawPath);
             _historyService.AddNewEvent(login, rawPath, "Download");
@@ -221,7 +241,10 @@ namespace PublicProject.Modules
         private string GetRawPath(string[] names)
         {
             var sb = new StringBuilder();
-            foreach (var path in names) sb.Append($"{path}{Path.DirectorySeparatorChar}");
+            foreach (string path in names)
+            {
+                sb.Append($"{path}{Path.DirectorySeparatorChar}");
+            }
 
             var rawPath = sb.ToString();
             return rawPath.Substring(0, rawPath.Length - 1);
@@ -232,6 +255,7 @@ namespace PublicProject.Modules
 
     internal class FileCrutch
     {
-        [JsonProperty(PropertyName = "path")] public string[] FileName { get; set; }
+        [JsonProperty(PropertyName = "path")]
+        public string[] FileName { get; set; }
     }
 }

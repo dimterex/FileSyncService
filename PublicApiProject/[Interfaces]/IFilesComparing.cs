@@ -1,12 +1,17 @@
-﻿using System.Collections.Generic;
-using FileSystemProject;
-using SdkProject.Api.Sync;
-
-namespace PublicProject._Interfaces_
+﻿namespace PublicProject._Interfaces_
 {
+    using System.Collections.Generic;
+
+    using FileSystemProject;
+
+    using SdkProject.Api.Sync;
+
     public interface IFilesComparing
     {
-        void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
-            IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer);
+        void Apply(
+            SyncStateFilesResponse response,
+            IList<FileInfoModel> deviceFolderFiles,
+            IList<string> filesFromDataBase,
+            IList<FileInfoModel> filesFromServer);
     }
 }

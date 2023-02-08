@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Core.Daemon
+﻿namespace Core.Daemon
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public class Daemon
     {
         private readonly AutoResetEvent _closing;
@@ -15,7 +15,11 @@ namespace Core.Daemon
 
         public void Run(Action action)
         {
-            Task.Factory.StartNew(() => { action?.Invoke(); });
+            Task.Factory.StartNew(
+                () =>
+                {
+                    action?.Invoke();
+                });
 
             Console.CancelKeyPress += OnExit;
             _closing.WaitOne();

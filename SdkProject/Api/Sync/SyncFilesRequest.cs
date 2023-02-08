@@ -1,10 +1,12 @@
-﻿using Newtonsoft.Json;
-using SdkProject._Interfaces_;
-
-namespace SdkProject.Api.Sync
+﻿namespace SdkProject.Api.Sync
 {
+    using _Interfaces_;
+
+    using Newtonsoft.Json;
+
     public class SyncFilesRequest : ISdkMessage
     {
-        [JsonProperty(PropertyName = "token")] public string Token { get; set; }
+        [JsonProperty(PropertyName = "token")]
+        public string Token { get; set; }
     }
 }

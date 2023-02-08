@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-
-namespace ServicesApi.Common
+﻿namespace ServicesApi.Common
 {
+    using Newtonsoft.Json;
+
     public class RabbitMqMessageContainer
     {
         #region Methods
@@ -15,11 +15,11 @@ namespace ServicesApi.Common
 
         #region Properties
 
-        [JsonProperty(PropertyName = "type")] public string Identifier { get; set; }
+        [JsonProperty(PropertyName = "type")]
+        public string Identifier { get; set; }
 
-        [JsonProperty(PropertyName = "value")] public object Value { get; set; }
-
-        [JsonIgnore] public string Queue { get; set; }
+        [JsonProperty(PropertyName = "value")]
+        public object Value { get; set; }
 
         #endregion Properties
     }

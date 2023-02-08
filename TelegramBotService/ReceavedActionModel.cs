@@ -1,9 +1,10 @@
-﻿using System;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-
-namespace TelegramBotService
+﻿namespace TelegramBotService
 {
+    using System;
+
+    using Telegram.Bot;
+    using Telegram.Bot.Types;
+
     public struct ReceavedActionModel
     {
         public ReceavedActionModel(string comment, Action<ITelegramBotClient, Message> action)

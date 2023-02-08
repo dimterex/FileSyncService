@@ -15,7 +15,7 @@
         {
             AddedFiles = new List<FileAddResponse>();
             RemovedFiles = new List<FileRemoveResponse>();
-            UploadedFiles = new List<FileUploadRequest>();
+            UploadedFiles = new List<FileUploadResponse>();
             UpdatedFiles = new List<FileUpdatedResponse>();
             ServerRemovedFiles = new List<FileServerRemovedResponse>();
             DatabaseAddedFiles = new List<FileDataBaseAddResponse>();
@@ -28,7 +28,7 @@
         public List<FileRemoveResponse> RemovedFiles { get; set; }
 
         [JsonProperty(PropertyName = "uploaded_files")]
-        public List<FileUploadRequest> UploadedFiles { get; set; }
+        public List<FileUploadResponse> UploadedFiles { get; set; }
 
         [JsonProperty(PropertyName = "updated_files")]
         public List<FileUpdatedResponse> UpdatedFiles { get; set; }

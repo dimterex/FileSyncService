@@ -6,6 +6,15 @@
 
     public class FolderItem
     {
+        #region Constructors
+
+        public FolderItem()
+        {
+            Files = new List<FileItem>();
+        }
+
+        #endregion
+
         #region Properties
 
         [JsonProperty(PropertyName = "files")]
@@ -13,15 +22,6 @@
 
         [JsonProperty(PropertyName = "path")]
         public string[] DictionaryPath { get; set; }
-
-        #endregion
-
-        #region Constructors
-
-        public FolderItem()
-        {
-            Files = new List<FileItem>();
-        }
 
         #endregion
     }

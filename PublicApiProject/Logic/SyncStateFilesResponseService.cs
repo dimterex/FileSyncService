@@ -1,15 +1,18 @@
-﻿using System.Collections.Concurrent;
-using NLog;
-using PublicProject._Interfaces_;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic
+﻿namespace PublicProject.Logic
 {
+    using System.Collections.Concurrent;
+
+    using _Interfaces_;
+
+    using NLog;
+
+    using SdkProject.Api.Sync;
+
     public class SyncStateFilesResponseService : ISyncStateFilesResponseService
     {
         private const string TAG = nameof(SyncStateFilesResponseService);
-        private readonly ConcurrentDictionary<string, SyncStateFilesResponse> _responses;
         private readonly ILogger _logger;
+        private readonly ConcurrentDictionary<string, SyncStateFilesResponse> _responses;
 
         public SyncStateFilesResponseService()
         {
@@ -19,7 +22,7 @@ namespace PublicProject.Logic
 
         public SyncStateFilesResponse GetResponse(string token)
         {
-            if (_responses.TryGetValue(token, out var stateFilesResponse))
+            if (_responses.TryGetValue(token, out SyncStateFilesResponse stateFilesResponse))
                 return stateFilesResponse;
 
             return null;

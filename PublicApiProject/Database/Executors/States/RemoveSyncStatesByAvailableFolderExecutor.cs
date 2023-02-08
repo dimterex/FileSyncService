@@ -1,8 +1,10 @@
-﻿using System.Linq;
-using Common.DatabaseProject._Interfaces_;
-
-namespace PublicProject.Database.Actions.States
+﻿namespace PublicProject.Database.Actions.States
 {
+    using System.Linq;
+
+    using Common.DatabaseProject._Interfaces_;
+    using Common.DatabaseProject.Dto;
+
     public class RemoveSyncStatesByAvailableFolderExecutor
     {
         private readonly IDataBaseFactory _dataBaseFactory;
@@ -14,11 +16,11 @@ namespace PublicProject.Database.Actions.States
 
         public void Handler(string login, string availableFolder)
         {
-            using (var dataBase = _dataBaseFactory.Create())
+            using (IDataBaseContext dataBase = _dataBaseFactory.Create())
             {
-                var syncState = from b in dataBase.SyncStates
-                    where b.Login == login && b.FilePath.StartsWith(availableFolder)
-                    select b;
+                IQueryable<SyncState> syncState = from b in dataBase.SyncStates
+                                                  where b.Login == login && b.FilePath.StartsWith(availableFolder)
+                                                  select b;
 
                 dataBase.SyncStates.RemoveRange(syncState);
                 dataBase.ApplyChanges();

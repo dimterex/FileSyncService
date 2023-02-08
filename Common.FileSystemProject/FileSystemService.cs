@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace FileSystemProject
+﻿namespace FileSystemProject
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+
     public class FileSystemService : IFileSystemService
     {
         public IList<string> GetFiles(string path)

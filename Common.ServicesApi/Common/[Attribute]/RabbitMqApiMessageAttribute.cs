@@ -1,16 +1,15 @@
-﻿using System;
-
-namespace ServicesApi.Common._Attribute_
+﻿namespace ServicesApi.Common._Attribute_
 {
+    using System;
+
     [AttributeUsage(AttributeTargets.Class)]
     public class RabbitMqApiMessageAttribute : Attribute
     {
         #region Constructors
 
-        public RabbitMqApiMessageAttribute(string queue, string id)
+        public RabbitMqApiMessageAttribute(string id)
         {
             Id = id;
-            Queue = queue;
         }
 
         #endregion Constructors
@@ -18,8 +17,6 @@ namespace ServicesApi.Common._Attribute_
         #region Properties
 
         public string Id { get; }
-
-        public string Queue { get; }
 
         #endregion Properties
     }

@@ -1,18 +1,26 @@
-﻿using System;
-using System.Linq;
-using Core.Publisher._Interfaces_;
-using FileSystemProject;
-using NLog;
-using PublicProject._Interfaces_;
-using PublicProject._Interfaces_.Factories;
-using PublicProject.Database.Actions.States;
-using PublicProject.Helper;
-using SdkProject.Api.Connection;
-using SdkProject.Api.Sync;
-using ServicesApi.Telegram;
-
-namespace PublicProject.Modules
+﻿namespace PublicProject.Modules
 {
+    using System;
+    using System.Linq;
+
+    using _Interfaces_;
+    using _Interfaces_.Factories;
+
+    using Core.Publisher._Interfaces_;
+
+    using Database.Actions.States;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using Logic;
+
+    using NLog;
+
+    using SdkProject.Api.Connection;
+    using SdkProject.Api.Sync;
+
     public class CoreModule : BaseApiModule
     {
         private const string TAG = nameof(CoreModule);
@@ -21,14 +29,15 @@ namespace PublicProject.Modules
         private readonly IConnectionStateManager _connectionStateManager;
 
         private readonly IFileManager _fileManager;
+        private readonly IHistoryService _historyService;
+        private readonly ILogger _logger;
         private readonly IPublisherService _publisherController;
         private readonly RemoveSyncStatesExecutor _removeSyncStatesExecutor;
-        private readonly IHistoryService _historyService;
         private readonly ISyncStateFilesResponseService _syncStateFilesResponseService;
         private readonly ISyncStateFilesResponseTaskFactory _syncStateFilesResponseTaskFactory;
-        private readonly ILogger _logger;
 
-        public CoreModule(IFileManager fileManager,
+        public CoreModule(
+            IFileManager fileManager,
             IConnectionStateManager connectionStateManager,
             IRootService rootService,
             ISyncStateFilesResponseTaskFactory syncStateFilesResponseTaskFactory,
@@ -37,7 +46,8 @@ namespace PublicProject.Modules
             AddNewStatesExecutor addNewStatesExecutor,
             RemoveSyncStatesExecutor removeSyncStatesExecutor,
             IApiController apiController,
-            IHistoryService historyService) : base("core", new Version(0, 1), apiController)
+            IHistoryService historyService)
+            : base("core", new Version(0, 1), apiController)
         {
             _fileManager = fileManager;
             _connectionStateManager = connectionStateManager;
@@ -58,10 +68,9 @@ namespace PublicProject.Modules
             RegisterPostRequestWithBody<ConnectionRequest>(OnConnectionRequest);
         }
 
-        private void OnSyncStartFilesRequest(SyncFilesRequest fileAction, SyncStartFilesRequest bodyRequest,
-            HttpRequestEventModel e)
+        private void OnSyncStartFilesRequest(SyncFilesRequest fileAction, SyncStartFilesRequest bodyRequest, HttpRequestEventModel e)
         {
-            var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
+            string login = _connectionStateManager.GetLoginByToken(fileAction.Token);
             if (string.IsNullOrEmpty(login))
             {
                 _apiController.SetErrorResponse(e);
@@ -69,7 +78,7 @@ namespace PublicProject.Modules
                 return;
             }
 
-            var stateFilesResponse = _syncStateFilesResponseService.GetResponse(fileAction.Token);
+            SyncStateFilesResponse stateFilesResponse = _syncStateFilesResponseService.GetResponse(fileAction.Token);
             if (stateFilesResponse == null)
             {
                 _apiController.SetErrorResponse(e);
@@ -78,23 +87,19 @@ namespace PublicProject.Modules
             }
 
             if (stateFilesResponse.DatabaseAddedFiles.Count > 0)
-                _addNewStatesExecutor.Handler(login,
-                    stateFilesResponse.DatabaseAddedFiles.Select(x => PathHelper.GetRawPath(x.FileName)).ToArray());
+                _addNewStatesExecutor.Handler(login, stateFilesResponse.DatabaseAddedFiles.Select(x => PathHelper.GetRawPath(x.FileName)).ToArray());
 
             if (stateFilesResponse.ServerRemovedFiles.Count > 0)
             {
-                _removeSyncStatesExecutor.Handler(login,
+                _removeSyncStatesExecutor.Handler(
+                    login,
                     stateFilesResponse.ServerRemovedFiles.Select(x => PathHelper.GetRawPath(x.FileName)).ToArray());
 
-                foreach (var filePath in stateFilesResponse.ServerRemovedFiles.ToList())
+                foreach (FileServerRemovedResponse filePath in stateFilesResponse.ServerRemovedFiles.ToList())
                 {
-                    var path = PathHelper.GetRawPath(filePath.FileName);
+                    string path = PathHelper.GetRawPath(filePath.FileName);
                     _fileManager.RemoveFile(path);
                     _historyService.AddNewEvent(login, path, "Removed");
-                    _publisherController.SendMessage(new TelegramMessage
-                    {
-                        Message = $"Remove {path}"
-                    });
                 }
             }
 
@@ -102,17 +107,15 @@ namespace PublicProject.Modules
             _apiController.SendResponse(e, new SyncStartFilesResponse());
         }
 
-        private void OnConnectionRequest(SyncFilesRequest arg2, ConnectionRequest connectionRequest,
-            HttpRequestEventModel e)
+        private void OnConnectionRequest(SyncFilesRequest arg2, ConnectionRequest connectionRequest, HttpRequestEventModel e)
         {
-            var connectionRequestTask = _connectionRequestTaskFactory.Create(connectionRequest.Login, e);
+            ConnectionRequestTask connectionRequestTask = _connectionRequestTaskFactory.Create(connectionRequest.Login, e);
             connectionRequestTask.Run();
         }
 
-        private void OnSyncFilesRequest(SyncFilesRequest fileAction, SyncStateFilesBodyRequest bodyRequest,
-            HttpRequestEventModel e)
+        private void OnSyncFilesRequest(SyncFilesRequest fileAction, SyncStateFilesBodyRequest bodyRequest, HttpRequestEventModel e)
         {
-            var login = _connectionStateManager.GetLoginByToken(fileAction.Token);
+            string login = _connectionStateManager.GetLoginByToken(fileAction.Token);
             if (string.IsNullOrEmpty(login))
             {
                 _apiController.SetErrorResponse(e);
@@ -120,7 +123,7 @@ namespace PublicProject.Modules
                 return;
             }
 
-            var connectionTask = _syncStateFilesResponseTaskFactory.Create(login, fileAction.Token, bodyRequest, e);
+            SyncStateFilesResponseTask connectionTask = _syncStateFilesResponseTaskFactory.Create(login, fileAction.Token, bodyRequest, e);
             connectionTask.Run();
         }
     }

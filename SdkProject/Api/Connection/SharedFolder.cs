@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-
-namespace SdkProject.Api.Connection
+﻿namespace SdkProject.Api.Connection
 {
+    using System.Collections.Generic;
+
+    using Newtonsoft.Json;
+
     public class SharedFolder
     {
         public SharedFolder()
@@ -10,6 +11,7 @@ namespace SdkProject.Api.Connection
             Files = new List<string>();
         }
 
-        [JsonProperty(PropertyName = "path")] public List<string> Files { get; set; }
+        [JsonProperty(PropertyName = "path")]
+        public List<string> Files { get; set; }
     }
 }

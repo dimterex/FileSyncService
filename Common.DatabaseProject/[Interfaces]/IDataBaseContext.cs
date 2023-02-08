@@ -1,9 +1,11 @@
-﻿using System;
-using Common.DatabaseProject.Dto;
-using Microsoft.EntityFrameworkCore;
-
-namespace Common.DatabaseProject._Interfaces_
+﻿namespace Common.DatabaseProject._Interfaces_
 {
+    using System;
+
+    using Dto;
+
+    using Microsoft.EntityFrameworkCore;
+
     public interface IDataBaseContext : IDisposable
     {
         DbSet<SyncState> SyncStates { get; }

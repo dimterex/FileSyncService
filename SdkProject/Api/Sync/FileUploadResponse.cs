@@ -6,8 +6,8 @@
 
     using Newtonsoft.Json;
 
-    [SdkApiMessage("file_upload_request")]
-    public class FileUploadRequest : ISdkMessage
+    [SdkApiMessage("file_upload_response")]
+    public class FileUploadResponse : ISdkMessage
     {
         #region Properties
 

@@ -1,24 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject.Helper;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic.Comparing
+﻿namespace PublicProject.Logic.Comparing
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using _Interfaces_;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using SdkProject.Api.Sync;
+
+    /// <summary>
+    /// Database add files
+    /// </summary>
     public class ClientServerExistFiles : IFilesComparing
     {
-        public void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
-            IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
+        public void Apply(
+            SyncStateFilesResponse response,
+            IList<FileInfoModel> deviceFolderFiles,
+            IList<string> filesFromDataBase,
+            IList<FileInfoModel> filesFromServer)
         {
-            foreach (var fileFromDevice in deviceFolderFiles)
+            foreach (FileInfoModel fileFromDevice in deviceFolderFiles)
             {
-                var serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDevice.Path);
+                FileInfoModel serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDevice.Path);
                 if (serverPath == null) continue;
 
-                var databaseFile = filesFromDataBase.FirstOrDefault(x => x == fileFromDevice.Path);
+                string databaseFile = filesFromDataBase.FirstOrDefault(x => x == fileFromDevice.Path);
                 if (databaseFile != null)
                     continue;
 

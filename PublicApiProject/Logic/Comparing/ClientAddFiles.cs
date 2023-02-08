@@ -1,18 +1,28 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FileSystemProject;
-using PublicProject._Interfaces_;
-using PublicProject.Helper;
-using SdkProject.Api.Sync;
-
-namespace PublicProject.Logic.Comparing
+﻿namespace PublicProject.Logic.Comparing
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
+    using _Interfaces_;
+
+    using FileSystemProject;
+
+    using Helper;
+
+    using SdkProject.Api.Sync;
+
+    /// <summary>
+    /// Device added files
+    /// </summary>
     public class ClientAddFiles : IFilesComparing
     {
-        public void Apply(SyncStateFilesResponse response, IList<FileInfoModel> deviceFolderFiles,
-            IList<string> filesFromDataBase, IList<FileInfoModel> filesFromServer)
+        public void Apply(
+            SyncStateFilesResponse response,
+            IList<FileInfoModel> deviceFolderFiles,
+            IList<string> filesFromDataBase,
+            IList<FileInfoModel> filesFromServer)
         {
-            foreach (var serverFileInfoModel in filesFromServer)
+            foreach (FileInfoModel serverFileInfoModel in filesFromServer)
             {
                 if (ExistOnDataBase(filesFromDataBase, serverFileInfoModel.Path))
                     continue;

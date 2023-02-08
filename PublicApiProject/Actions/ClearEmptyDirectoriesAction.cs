@@ -1,36 +1,37 @@
-﻿using System;
-using System.Text;
-using Core.Publisher;
-using Core.Publisher._Interfaces_;
-using FileSystemProject;
-using ServicesApi.Common._Interfaces_;
-using ServicesApi.FileStorage;
-using ServicesApi.Telegram;
-
-namespace PublicProject.Actions
+﻿namespace PublicProject.Actions
 {
-    public class ClearEmptyDirectoriesAction : IMessageHandler<ClearEmptyDirectories>
+    using System;
+    using System.Collections.Generic;
+
+    using _Interfaces_;
+
+    using FileSystemProject;
+
+    using ServicesApi.Common;
+    using ServicesApi.Common._Interfaces_;
+    using ServicesApi.FileStorage;
+
+    public class ClearEmptyDirectoriesAction : IMessageHandler<ClearEmptyDirectoriesRequest>
     {
         private readonly IFileManager _fileManager;
-        private readonly IPublisherService _publisherController;
+        private readonly IHistoryService _historyService;
 
-        public ClearEmptyDirectoriesAction(IPublisherService publisherController, IFileManager fileManager)
+        public ClearEmptyDirectoriesAction(IFileManager fileManager, IHistoryService historyService)
         {
-            _publisherController = publisherController;
             _fileManager = fileManager;
+            _historyService = historyService;
         }
 
-        public void Handler(ClearEmptyDirectories message)
+        public IMessage Handler(ClearEmptyDirectoriesRequest message)
         {
-            var removedList = _fileManager.RemoveEmptyDirectories(message.FilePaths);
-            var sb = new StringBuilder();
-            sb.AppendLine("Removed dictionaries:");
-            sb.AppendJoin(Environment.NewLine, removedList);
+            IList<string> removedList = _fileManager.RemoveEmptyDirectories(message.FilePaths);
+            _historyService.AddNewEvent("root", string.Join(Environment.NewLine, removedList), "Removed dictionaries");
 
-            _publisherController.SendMessage(new TelegramMessage
+            return new StatusResponse
             {
-                Message = sb.ToString()
-            });
+                Message = $"Removed: {string.Join(Environment.NewLine, removedList)}",
+                Status = Status.Ok
+            };
         }
     }
 }

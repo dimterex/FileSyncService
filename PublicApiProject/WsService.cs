@@ -1,16 +1,21 @@
-﻿using System;
-using System.Net;
-using System.Security.Authentication;
-using System.Text;
-using System.Threading;
-using NLog;
-using PublicProject._Interfaces_;
-using PublicProject.Modules;
-using WebSocketSharp.Server;
-using AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes;
-
-namespace PublicProject
+﻿namespace PublicProject
 {
+    using System;
+    using System.Net;
+    using System.Security.Authentication;
+    using System.Text;
+    using System.Threading;
+
+    using _Interfaces_;
+
+    using Modules;
+
+    using NLog;
+
+    using WebSocketSharp.Server;
+
+    using AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes;
+
     public class WsService
     {
         #region Constructors
@@ -74,14 +79,15 @@ namespace PublicProject
 
         private void BindSocketsWorker()
         {
-            _logger.Info(() =>
-            {
-                var sb = new StringBuilder();
-                sb.Append("=================================================");
-                sb.Append($"Started listening requests at: {_listenAddress}:{_httpPort}");
-                sb.Append("=================================================");
-                return sb.ToString();
-            });
+            _logger.Info(
+                () =>
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("=================================================");
+                    sb.Append($"Started listening requests at: {_listenAddress}:{_httpPort}");
+                    sb.Append("=================================================");
+                    return sb.ToString();
+                });
 
             while (_isActive)
             {
@@ -143,8 +149,14 @@ namespace PublicProject
         private void InitHttpServer(HttpServer server)
         {
             server.WaitTime = TimeSpan.FromSeconds(100);
-            server.OnGet += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
-            server.OnPost += (server, e) => { HandleRequest(new HttpRequestEventModel(e.Request, e.Response)); };
+            server.OnGet += (server, e) =>
+            {
+                HandleRequest(new HttpRequestEventModel(e.Request, e.Response));
+            };
+            server.OnPost += (server, e) =>
+            {
+                HandleRequest(new HttpRequestEventModel(e.Request, e.Response));
+            };
             server.Start();
         }
 
@@ -155,8 +167,7 @@ namespace PublicProject
             if (model.Request.Url.AbsolutePath.StartsWith(ApiController.API_RESOURCE_PATH))
             {
                 model.Response.Headers.Add("Access-Control-Allow-Origin: *");
-                Controller.HandleRequest(
-                    model.Request.Url.AbsolutePath.Substring(ApiController.API_RESOURCE_PATH.Length), model);
+                Controller.HandleRequest(model.Request.Url.AbsolutePath.Substring(ApiController.API_RESOURCE_PATH.Length), model);
             }
             else
             {

@@ -1,7 +1,7 @@
-﻿using Common.DatabaseProject._Interfaces_;
-
-namespace Common.DatabaseProject
+﻿namespace Common.DatabaseProject
 {
+    using _Interfaces_;
+
     public class DataBaseFactory : IDataBaseFactory
     {
         private readonly string _dbPath;

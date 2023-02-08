@@ -1,18 +1,22 @@
-﻿using PublicProject._Interfaces_;
-using PublicProject._Interfaces_.Factories;
-using PublicProject.Database.Actions.Users;
-using PublicProject.Logic;
-using PublicProject.Modules;
-
-namespace PublicProject.Factories
+﻿namespace PublicProject.Factories
 {
+    using _Interfaces_;
+    using _Interfaces_.Factories;
+
+    using Database.Actions.Users;
+
+    using Logic;
+
+    using Modules;
+
     public class ConnectionRequestTaskFactory : IConnectionRequestTaskFactory
     {
         private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly IConnectionStateManager _connectionStateManager;
 
-        public ConnectionRequestTaskFactory(IConnectionStateManager connectionStateManager,
+        public ConnectionRequestTaskFactory(
+            IConnectionStateManager connectionStateManager,
             IApiController apiController,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor)
         {
@@ -23,8 +27,7 @@ namespace PublicProject.Factories
 
         public ConnectionRequestTask Create(string login, HttpRequestEventModel e)
         {
-            return new ConnectionRequestTask(login, e, _connectionStateManager, _availableFoldersForUserRequestExecutor,
-                _apiController);
+            return new ConnectionRequestTask(login, e, _connectionStateManager, _availableFoldersForUserRequestExecutor, _apiController);
         }
     }
 }

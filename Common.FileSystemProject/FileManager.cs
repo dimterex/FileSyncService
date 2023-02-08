@@ -49,9 +49,15 @@
             return result;
         }
 
-        public FileInfoModel GetFileInfo(string path)
+        public bool TryGetFileInfo(string path, out FileInfoModel fileInfoModel)
         {
-            return _fileInfoModelFactory.Create(new FileInfo(path));
+            if (File.Exists(path))
+            {
+                fileInfoModel = _fileInfoModelFactory.Create(new FileInfo(path));
+                return true;
+            }
+            fileInfoModel = null;
+            return false;
         }
 
         private IList<FileInfo> GetFileData(string folderPath)

@@ -35,12 +35,18 @@
                 string databasePath = filesFromDataBase.FirstOrDefault(x => x == fileFromDevice.Path);
                 if (databasePath != null)
                 {
-                    FileInfoModel fileInfo = _fileManager.GetFileInfo(databasePath);
-                    if (fileInfo.Size == fileFromDevice.Size)
-                        continue;
+                    if (_fileManager.TryGetFileInfo(databasePath, out FileInfoModel fileInfo))
+                    {
+                        if (fileInfo.Size == fileFromDevice.Size)
+                            continue;
 
-                    if (fileInfo.LastWriteTimeUtc > fileFromDevice.LastWriteTimeUtc)
+                        if (fileInfo.LastWriteTimeUtc > fileFromDevice.LastWriteTimeUtc)
+                            continue;
+                    }
+                    else
+                    {
                         continue;
+                    }
                 }
 
                 FileInfoModel serverPath = filesFromServer.FirstOrDefault(x => x.Path == fileFromDevice.Path);

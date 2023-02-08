@@ -7,6 +7,6 @@
         IList<FileInfoModel> GetFiles(string folder);
         void RemoveFile(string filePath);
         IList<string> RemoveEmptyDirectories(IList<string> directories);
-        FileInfoModel GetFileInfo(string path);
+        bool TryGetFileInfo(string path, out FileInfoModel fileInfoModel);
     }
 }

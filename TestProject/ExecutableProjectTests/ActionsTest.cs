@@ -35,7 +35,12 @@ namespace TestProject.ExecutableProjectTests
             var deviceFiles = GetClientDictionaryModels();
             var serverFiles = GetServerDictionaryModels();
             var fileManager = Substitute.For<IFileManager>();
-            fileManager.GetFileInfo(Arg.Any<string>()).Returns(new FileInfoModel(string.Empty, 1, DateTime.Now));
+            fileManager
+                .TryGetFileInfo(Arg.Any<string>(), out Arg.Any<FileInfoModel>())
+                .Returns(x => { 
+                    x[1] = GetInfoModel(string.Empty, 0, 0);
+                    return true;
+                });
 
             // Act
             var serverRemoveFiles = new ServerRemoveFiles();

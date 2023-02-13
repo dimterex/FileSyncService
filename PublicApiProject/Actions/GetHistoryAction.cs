@@ -4,8 +4,11 @@ namespace PublicProject.Actions
 
     using _Interfaces_;
 
+    using Newtonsoft.Json;
+
     using NLog;
 
+    using ServicesApi.Common;
     using ServicesApi.Common._Interfaces_;
     using ServicesApi.History;
 
@@ -24,13 +27,15 @@ namespace PublicProject.Actions
         }
         public IMessage Handler(GetHistoryRequest message)
         {
-            var response = new GetHistoryResponse();
+            var response = new StatusResponse();
 
             IList<HistoryDto> events = _historyService.GetEvents();
 
+            var items = new List<ServicesApi.History.HistoryDto>();
+
             foreach (HistoryDto hist in events)
             {
-                response.Items.Add(
+                items.Add(
                     new ServicesApi.History.HistoryDto
                     {
                         Id = hist.Id,
@@ -40,6 +45,9 @@ namespace PublicProject.Actions
                         File = hist.File
                     });
             }
+
+            response.Status = Status.Ok;
+            response.Message = JsonConvert.SerializeObject(items);
 
             return response;
         }

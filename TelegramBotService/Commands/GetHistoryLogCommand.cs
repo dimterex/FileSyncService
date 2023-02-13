@@ -1,5 +1,6 @@
 ﻿namespace TelegramBotService.Commands
 {
+    using System;
     using System.Linq;
 
     using _Interfaces_;
@@ -7,6 +8,7 @@
     using Core.Publisher._Interfaces_;
 
     using ServicesApi;
+    using ServicesApi.Common;
     using ServicesApi.Common._Interfaces_;
     using ServicesApi.History;
     using ServicesApi.Telegram;
@@ -22,17 +24,29 @@
 
         public void Handle()
         {
-            IMessage response = _publisherService.CallAsync(QueueConstants.FILE_STORAGE_QUEUE, new GetHistoryRequest());
+            IMessage response = _publisherService.CallAsync(QueueConstants.SYNC_APPLICATION_QUEUE, new GetHistoryRequest());
 
             IMessage responseResult = response;
-
-            if (responseResult is GetHistoryResponse getHistoryResponse)
-                _publisherService.CallAsync(
-                    QueueConstants.TELEGRAM_QUEUE,
-                    new SendTelegramMessageRequest
+            if (responseResult is not StatusResponse statusResponse)
+                return;
+            
+            switch (statusResponse.Status)
+            {
+                case Status.Ok:
+                    // _publisherService.CallAsync(QueueConstants.TELEGRAM_QUEUE, new SendTelegramMessageRequest()
+                    // {
+                    //     Message = statusResponse.Message,
+                    // });
+                    break;
+                case Status.Error:
+                    _publisherService.CallAsync(QueueConstants.TELEGRAM_QUEUE, new SendTelegramMessageRequest()
                     {
-                        Message = getHistoryResponse.Items.FirstOrDefault().File
+                        Message = statusResponse.Message,
                     });
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }

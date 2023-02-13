@@ -2,7 +2,7 @@
 {
     public class QueueConstants
     {
-        public const string FILE_STORAGE_QUEUE = "filestorage_queue";
+        public const string SYNC_APPLICATION_QUEUE = "sync_application_queue";
         public const string TELEGRAM_QUEUE = "telegram_queue";
     }
 }

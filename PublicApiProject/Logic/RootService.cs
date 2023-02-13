@@ -31,7 +31,7 @@
             _wsService = wsService;
 
             PublisherService = new RpcPublisherService(host);
-            _customerController = new CustomerController(host, QueueConstants.FILE_STORAGE_QUEUE);
+            _customerController = new CustomerController(host, QueueConstants.SYNC_APPLICATION_QUEUE);
 
             _customerController.Configure(clearEmptyDirectoriesAction);
             _customerController.Configure(getHistoryAction);

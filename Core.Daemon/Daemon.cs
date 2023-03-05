@@ -15,17 +15,30 @@
 
         public void Run(Action action)
         {
-            Task.Factory.StartNew(
+            var task = Task.Factory.StartNew(
                 () =>
                 {
                     action?.Invoke();
                 });
+            
+            task.ContinueWith(
+                t =>
+                {
+                    task.Dispose();
+                    Stop();
+                }, TaskContinuationOptions.OnlyOnFaulted);
+            
 
             Console.CancelKeyPress += OnExit;
             _closing.WaitOne();
         }
 
         private void OnExit(object sender, ConsoleCancelEventArgs args)
+        {
+            Stop();
+        }
+
+        private void Stop()
         {
             Console.CancelKeyPress -= OnExit;
             Console.WriteLine("Exit");

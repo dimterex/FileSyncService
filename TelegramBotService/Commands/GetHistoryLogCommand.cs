@@ -26,8 +26,7 @@
         {
             IMessage response = _publisherService.CallAsync(QueueConstants.SYNC_APPLICATION_QUEUE, new GetHistoryRequest());
 
-            IMessage responseResult = response;
-            if (responseResult is not StatusResponse statusResponse)
+            if (response is not StatusResponse statusResponse)
                 return;
             
             switch (statusResponse.Status)
@@ -41,7 +40,7 @@
                 case Status.Error:
                     _publisherService.CallAsync(QueueConstants.TELEGRAM_QUEUE, new SendTelegramMessageRequest()
                     {
-                        Message = statusResponse.Message,
+                        Message = statusResponse.Message.ToString(),
                     });
                     break;
                 default:

@@ -17,6 +17,6 @@ namespace ServicesApi.Common
         public Status Status { get; set; }
 
         [JsonProperty(PropertyName = "message")]
-        public string Message { get; set; }
+        public object Message { get; set; }
     }
 }

@@ -2,23 +2,23 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <RootNamespace>PublicProject</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2"/>
-        <PackageReference Include="NLog" Version="5.1.1"/>
-        <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
+        <PackageReference Include="NLog" Version="5.1.1" />
+        <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Common.DatabaseProject\Common.DatabaseProject.csproj"/>
-        <ProjectReference Include="..\Core.Customer\Core.Customer.csproj"/>
-        <ProjectReference Include="..\Core.Daemon\Core.Daemon.csproj"/>
-        <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj"/>
-        <ProjectReference Include="..\Common.FileSystemProject\Common.FileSystemProject.csproj"/>
-        <ProjectReference Include="..\SdkProject\SdkProject.csproj"/>
+        <ProjectReference Include="..\Common.DatabaseProject\Common.DatabaseProject.csproj" />
+        <ProjectReference Include="..\Core.Customer\Core.Customer.csproj" />
+        <ProjectReference Include="..\Core.Daemon\Core.Daemon.csproj" />
+        <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj" />
+        <ProjectReference Include="..\Common.FileSystemProject\Common.FileSystemProject.csproj" />
+        <ProjectReference Include="..\SdkProject\SdkProject.csproj" />
     </ItemGroup>
 
 </Project>

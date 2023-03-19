@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <RootNamespace>FileSystemProject</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NLog" Version="5.1.1"/>
+        <PackageReference Include="NLog" Version="5.1.1" />
     </ItemGroup>
 
 </Project>

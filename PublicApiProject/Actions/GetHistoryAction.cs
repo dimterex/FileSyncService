@@ -47,7 +47,7 @@ namespace PublicProject.Actions
             }
 
             response.Status = Status.Ok;
-            response.Message = JsonConvert.SerializeObject(items);
+            response.Message = items;
 
             return response;
         }

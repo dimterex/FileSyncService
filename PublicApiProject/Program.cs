@@ -6,6 +6,8 @@
     using Common.DatabaseProject._Interfaces_;
 
     using Core.Daemon;
+    using Core.WebServiceBase._Interfaces_;
+    using Core.WebServiceBase.Services;
 
     using FileSystemProject;
 
@@ -67,6 +69,7 @@
                     // Rest
                     services.AddSingleton<CoreModule>();
                     services.AddSingleton<FilesModule>();
+                    services.AddSingleton<SyncStateModule>();
 
                     // RabbitMQ
                     services.AddSingleton<ClearEmptyDirectoriesAction>();
@@ -86,6 +89,7 @@
                     var rootService = serviceProvider.GetService<IRootService>();
                     serviceProvider.GetService<CoreModule>();
                     serviceProvider.GetService<FilesModule>();
+                    serviceProvider.GetService<SyncStateModule>();
 
                     rootService.Start(HTTP_PORT, HTTPS_PORT);
                 });

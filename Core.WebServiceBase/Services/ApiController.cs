@@ -1,24 +1,21 @@
-﻿namespace PublicProject
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Net;
-    using System.Text;
+namespace Core.WebServiceBase.Services;
 
-    using _Interfaces_;
+using System.Net;
+using System.Text;
 
-    using Modules;
+using _Interfaces_;
 
-    using Newtonsoft.Json;
+using Models;
 
-    using NLog;
+using Newtonsoft.Json;
 
-    using SdkProject;
-    using SdkProject._Interfaces_;
-    using SdkProject.Api;
+using NLog;
 
-    public class ApiController : IApiController
+using SdkProject;
+using SdkProject._Interfaces_;
+using SdkProject.Api;
+
+public class ApiController : IApiController
     {
         public const string API_RESOURCE_PATH = "/api";
         private const string TAG = nameof(ApiController);
@@ -38,8 +35,6 @@
         {
             try
             {
-                string token = e.Request.QueryString["token"];
-
                 if (string.IsNullOrEmpty(resource) || !_requestToModule.TryGetValue(resource, out BaseApiModule service))
                 {
                     _logger.Warn(() => $"Can't route '{e.Request.RawUrl}' request to appropriate handler.");
@@ -49,19 +44,12 @@
 
                 _logger.Info(() => $"Success route '{e.Request.RawUrl}' request to appropriate handler.");
 
-                service.Handle(resource.Substring(resource.IndexOf('/', 1) + 1), e);
+                service.Handle(resource, e);
             }
             catch (Exception ex)
             {
                 _logger.Error(() => $"Handle Request Error {ex.Message}");
-
-                try
-                {
-                    e.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                }
-                catch (InvalidOperationException)
-                {
-                }
+                e.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
         }
 
@@ -72,7 +60,7 @@
 
         public void RegisterRequest(string resource, BaseApiModule module)
         {
-            _requestToModule.Add($"/{module.Name}/{module.Version.Major}/{resource}", module);
+            _requestToModule.Add($"/{module.Name}/{resource}", module);
         }
 
         public void SendResponse(HttpRequestEventModel e, ISdkMessage response)
@@ -93,7 +81,6 @@
                 try
                 {
                     _logger.Debug(() => $"Send response: {rabbitMqMessageContainer.Identifier}");
-
                     serializer.Serialize(jsonWriter, new[] { rabbitMqMessageContainer });
                 }
                 finally
@@ -103,4 +90,3 @@
             }
         }
     }
-}

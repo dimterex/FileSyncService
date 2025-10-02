@@ -4,6 +4,5 @@
 
     public interface ITelegramService
     {
-        Task SendTextMessageAsync(string message);
     }
 }

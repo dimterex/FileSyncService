@@ -1,22 +1,18 @@
-﻿namespace PublicProject
-{
-    using System;
-    using System.Net;
-    using System.Security.Authentication;
-    using System.Text;
-    using System.Threading;
+namespace Core.WebServiceBase.Services;
 
-    using _Interfaces_;
+using System.Net;
+using System.Security.Authentication;
+using System.Text;
 
-    using Modules;
+using _Interfaces_;
 
-    using NLog;
+using Models;
 
-    using WebSocketSharp.Server;
+using NLog;
 
-    using AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes;
+using WebSocketSharp.Server;
 
-    public class WsService
+public class WsService
     {
         #region Constructors
 
@@ -132,7 +128,7 @@
             {
                 _wssServer = new HttpServer(_listenAddress, _httpsPort, true)
                 {
-                    AuthenticationSchemes = AuthenticationSchemes.Anonymous
+                    AuthenticationSchemes = WebSocketSharp.Net.AuthenticationSchemes.Anonymous
                 };
 
                 _wssServer.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12;
@@ -179,4 +175,3 @@
 
         #endregion Methods
     }
-}

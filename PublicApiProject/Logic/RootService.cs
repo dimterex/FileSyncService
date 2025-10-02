@@ -9,6 +9,7 @@
     using Core.Customer;
     using Core.Publisher;
     using Core.Publisher._Interfaces_;
+    using Core.WebServiceBase.Services;
 
     using PublicApiProject;
 

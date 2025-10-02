@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C#: TelegramBotService Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\TelegramBotService\\TelegramBotService.csproj",
+            "environmentVariables": {
+                "CHANNEL_ID": "351591710",
+                "FOLDER_TO_SAVE": "C:\\Users\\UseR\\Downloads\\test",
+                "TOKEN": "abcd",
+                "RABBIT_HOST": "abcd",
+            }
+        }
+    ]
+}

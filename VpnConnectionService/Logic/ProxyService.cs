@@ -1,4 +1,6 @@
-﻿using VpnConnectionService._Interfaces_;
+﻿using Core.Process;
+
+using VpnConnectionService._Interfaces_;
 
 public class ProxyService : IProxyService
 {

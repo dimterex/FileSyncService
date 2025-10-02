@@ -5,6 +5,9 @@
     using _Interfaces_;
     using _Interfaces_.Factories;
 
+    using Core.WebServiceBase._Interfaces_;
+    using Core.WebServiceBase.Models;
+
     using Database.Actions.States;
     using Database.Actions.Users;
 
@@ -19,7 +22,6 @@
         private readonly IApiController _apiController;
         private readonly AvailableFoldersForUserRequestExecutor _availableFoldersForUserRequestExecutor;
         private readonly SyncStateFilesBodyRequest _bodyRequest;
-        private readonly IFileInfoModelFactory _fileInfoModelFactory;
         private readonly IFileManager _fileManager;
         private readonly HttpRequestEventModel _httpRequestEventModel;
         private readonly string _login;
@@ -37,7 +39,6 @@
             ISyncStateFilesResponseService syncStateFilesResponseService,
             IApiController apiController,
             ISyncStateFilesResponseFactory syncStateFilesResponseFactory,
-            IFileInfoModelFactory fileInfoModelFactory,
             AvailableFoldersForUserRequestExecutor availableFoldersForUserRequestExecutor,
             SyncStatesRequestExecutor syncStatesRequestExecutor)
         {
@@ -49,7 +50,6 @@
             _syncStateFilesResponseService = syncStateFilesResponseService;
             _apiController = apiController;
             _syncStateFilesResponseFactory = syncStateFilesResponseFactory;
-            _fileInfoModelFactory = fileInfoModelFactory;
             _availableFoldersForUserRequestExecutor = availableFoldersForUserRequestExecutor;
             _syncStatesRequestExecutor = syncStatesRequestExecutor;
         }

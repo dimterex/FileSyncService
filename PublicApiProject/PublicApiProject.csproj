@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
-        <PackageReference Include="NLog" Version="5.1.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageReference Include="NLog" Version="5.2.8" />
         <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
     </ItemGroup>
 
@@ -18,6 +18,7 @@
         <ProjectReference Include="..\Core.Daemon\Core.Daemon.csproj" />
         <ProjectReference Include="..\Core.Publisher\Core.Publisher.csproj" />
         <ProjectReference Include="..\Common.FileSystemProject\Common.FileSystemProject.csproj" />
+        <ProjectReference Include="..\Core.WebServiceBase\Core.WebServiceBase.csproj" />
         <ProjectReference Include="..\SdkProject\SdkProject.csproj" />
     </ItemGroup>
 

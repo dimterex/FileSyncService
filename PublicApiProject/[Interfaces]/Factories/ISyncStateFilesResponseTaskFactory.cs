@@ -1,8 +1,8 @@
 ﻿namespace PublicProject._Interfaces_.Factories
 {
-    using Logic;
+    using Core.WebServiceBase.Models;
 
-    using Modules;
+    using Logic;
 
     using SdkProject.Api.Sync;
 

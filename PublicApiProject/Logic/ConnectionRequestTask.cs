@@ -5,6 +5,9 @@
 
     using _Interfaces_;
 
+    using Core.WebServiceBase._Interfaces_;
+    using Core.WebServiceBase.Models;
+
     using Database.Actions.Users;
 
     using Helper;

@@ -3,6 +3,8 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Timers;
 
+using Core.Process;
+
 using NLog;
 
 using VpnConnectionService._Interfaces_;

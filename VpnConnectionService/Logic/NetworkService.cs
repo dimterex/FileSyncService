@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 
+using Core.Process;
+
 using NLog;
 
 using VpnConnectionService._Interfaces_;

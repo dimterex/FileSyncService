@@ -21,12 +21,9 @@
         private readonly ILogger _logger;
         private readonly ITelegramBotClient _telegramBotClient;
 
-        private readonly int _telegramId;
-
-        public TelegramService(string botToken, int telegram_id)
+        public TelegramService(string botToken)
         {
             _logger = LogManager.GetLogger(TAG);
-            _telegramId = telegram_id;
             _telegramBotClient = new TelegramBotClient(botToken);
 
             _actionsService = new ActionsService();
@@ -34,11 +31,6 @@
             ReceiverOptions receiverOptions = new();
             _cancellationToketSource = new CancellationTokenSource();
             _telegramBotClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, receiverOptions, _cancellationToketSource.Token);
-        }
-
-        public Task SendTextMessageAsync(string message)
-        {
-            return _telegramBotClient.SendTextMessageAsync(_telegramId, message);
         }
 
         private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)

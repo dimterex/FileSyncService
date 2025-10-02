@@ -7,7 +7,8 @@
 
     using _Interfaces_;
 
-    using Core.Publisher._Interfaces_;
+    using Core.WebServiceBase._Interfaces_;
+    using Core.WebServiceBase.Models;
 
     using Database.Actions.States;
 
@@ -23,14 +24,12 @@
 
         public FilesModule(
             IConnectionStateManager connectionStateManager,
-            IRootService rootService,
             AddNewStateExecutor addNewStateExecutor,
             IApiController apiController,
             IHistoryService historyService)
-            : base("files", new Version(0, 1), apiController)
+            : base("files", apiController)
         {
             _connectionStateManager = connectionStateManager;
-            _publisherController = rootService.PublisherService;
             _addNewStateExecutor = addNewStateExecutor;
             _historyService = historyService;
             _logger = LogManager.GetLogger(TAG);
@@ -41,7 +40,6 @@
         #region Constants
 
         private const string UPLOAD_REQUEST_NAME = "upload";
-
         private const string DOWNLOAD_REQUEST_NAME = "download";
 
         private const int READ_FILE_BUFFER_SIZE = 81920;
@@ -52,10 +50,9 @@
         #region Fields
 
         private readonly IConnectionStateManager _connectionStateManager;
-        private readonly IPublisherService _publisherController;
         private readonly AddNewStateExecutor _addNewStateExecutor;
         private readonly IHistoryService _historyService;
-        private readonly Logger _logger;
+        private readonly ILogger _logger;
 
         #endregion
 
@@ -63,7 +60,6 @@
 
         protected override void OnInitialize()
         {
-            // Регистрация обработчиков для REST-запросов:
             RegisterPostRequest<UploadRequest>(UPLOAD_REQUEST_NAME, HandleUploadRequest);
             RegisterGetRequest<DownloadRequest>(DOWNLOAD_REQUEST_NAME, HandleDownloadRequest);
         }
@@ -89,7 +85,6 @@
             var errorStatusCode = HttpStatusCode.RequestTimeout;
             var errorMessage = string.Empty;
             var isValidRequest = false;
-
 
             using (e.Request.InputStream)
             {

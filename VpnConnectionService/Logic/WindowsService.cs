@@ -2,6 +2,8 @@
 using System.IO;
 using System.Reflection;
 
+using Core.Process;
+
 using VpnConnectionService._Interfaces_;
 
 public class WindowsService : IWindowsService

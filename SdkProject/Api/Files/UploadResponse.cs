@@ -1,46 +1,45 @@
-﻿namespace SdkProject.Api.Files
+﻿namespace SdkProject.Api.Files;
+
+using System.Runtime.Serialization;
+
+using _Interfaces_;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+public class UploadResponse : ISdkMessage
 {
-    using System.Runtime.Serialization;
+    [JsonProperty(PropertyName = "result")]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public FilesOperationResult Result { get; set; }
 
-    using _Interfaces_;
+    [JsonProperty(PropertyName = "file_id")]
+    public string FileId { get; set; }
+}
 
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
+public enum FilesOperationResult
+{
+    [EnumMember(Value = "success")]
+    Success,
 
-    public class UploadResponse : ISdkMessage
-    {
-        [JsonProperty(PropertyName = "result")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public FilesOperationResult Result { get; set; }
+    [EnumMember(Value = "restricted_format")]
+    RestrictedFormat,
 
-        [JsonProperty(PropertyName = "file_id")]
-        public string FileId { get; set; }
-    }
+    [EnumMember(Value = "file_too_large")]
+    FileTooLarge,
 
-    public enum FilesOperationResult
-    {
-        [EnumMember(Value = "success")]
-        Success,
+    [EnumMember(Value = "not_found")]
+    NotFound,
 
-        [EnumMember(Value = "restricted_format")]
-        RestrictedFormat,
+    [EnumMember(Value = "file_storage_unavailable")]
+    FileStorageUnavailable,
 
-        [EnumMember(Value = "file_too_large")]
-        FileTooLarge,
+    [EnumMember(Value = "exists_already")]
+    ExistsAlready,
 
-        [EnumMember(Value = "not_found")]
-        NotFound,
+    [EnumMember(Value = "space_not_enough")]
+    SpaceNotEnough,
 
-        [EnumMember(Value = "file_storage_unavailable")]
-        FileStorageUnavailable,
-
-        [EnumMember(Value = "exists_already")]
-        ExistsAlready,
-
-        [EnumMember(Value = "space_not_enough")]
-        SpaceNotEnough,
-
-        [EnumMember(Value = "unexpected_error")]
-        UnexpectedError
-    }
+    [EnumMember(Value = "unexpected_error")]
+    UnexpectedError
 }

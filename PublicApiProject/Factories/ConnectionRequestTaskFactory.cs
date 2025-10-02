@@ -3,6 +3,9 @@
     using _Interfaces_;
     using _Interfaces_.Factories;
 
+    using Core.WebServiceBase._Interfaces_;
+    using Core.WebServiceBase.Models;
+
     using Database.Actions.Users;
 
     using Logic;

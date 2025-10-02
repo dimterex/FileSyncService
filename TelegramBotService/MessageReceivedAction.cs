@@ -34,7 +34,13 @@
         {
             void customCallBack(ITelegramBotClient botClient, Message msg)
             {
-                callBack.Handle();
+                if (msg.Text is not { } messageText)
+                    return;
+
+                var text = messageText.Split(message + " ");
+                var args = text.Length == 2 ? text[1] : string.Empty;
+                
+                callBack.Handle(botClient, msg.Chat.Id, msg.MessageId, args);
             }
 
             if (_actions.TryAdd(message, new ReceavedActionModel(comment, customCallBack)))
